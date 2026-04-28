@@ -119,7 +119,12 @@ function Panel() {
     if (type === "heading") block = { id, type, text: "عنوان جديد" };
     else if (type === "text") block = { id, type, text: "اكتب نصك هنا..." };
     else if (type === "image") block = { id, type, src: "https://placehold.co/800x500/0d3b3e/22d3ee?text=Image", alt: "صورة" };
-    else block = { id, type, text: "اضغط هنا", link: "#" };
+    else if (type === "button") block = { id, type, text: "اضغط هنا", link: "#" };
+    else if (type === "cards") block = { id, type, items: [{ id: id + "-c1", icon: "✨", title: "بطاقة", description: "وصف البطاقة", link: "#" }] };
+    else if (type === "video") block = { id, type, url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", caption: "" };
+    else if (type === "list") block = { id, type, items: ["نقطة أولى", "نقطة ثانية"] };
+    else if (type === "divider") block = { id, type };
+    else block = { id, type: "social", items: [{ id: id + "-s1", platform: "discord", label: "Discord", link: data.discordLink }] };
     updateSection(sectionId, { blocks: [...(data.customSections.find((s) => s.id === sectionId)?.blocks ?? []), block] });
   };
   const updateBlock = (sectionId: string, blockId: string, patch: Partial<Block>) => {
