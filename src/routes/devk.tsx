@@ -1,16 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useSiteDataDraft, defaultData, normalizeDigits, type Game, type ServerStat, type ServerPerk, type CustomSection, type Block, type Streamer, type LeaderboardEntry, type HallOfFameEntry } from "@/lib/khayal-store";
+import { useSiteDataDraft, defaultData, normalizeDigits, type Game, type ServerStat, type ServerPerk, type CustomSection, type Block, type CardItem, type SocialItem, type Streamer, type LeaderboardEntry, type HallOfFameEntry } from "@/lib/khayal-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast, Toaster } from "sonner";
-import { Trash2, Plus, ArrowUp, ArrowDown, Settings, Gamepad2, BarChart3, Sparkles, Video, Trophy, Crown, Layers, Users, Coins, ShoppingBag, Package, Save, RotateCcw } from "lucide-react";
+import { Trash2, Plus, Settings, Gamepad2, BarChart3, Sparkles, Video, Trophy, Crown, Layers, Users, Coins, ShoppingBag, Package, Save, RotateCcw, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/ImageUpload";
 import { MembersAdmin, PointsAdmin, TournamentsAdmin, ShopAdmin, OrdersAdmin, RegistrationsAdmin, TeamsAdmin } from "@/routes/admin";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 export const Route = createFileRoute("/devk")({
   head: () => ({ meta: [{ title: "Dev Panel" }, { name: "robots", content: "noindex" }] }),
@@ -101,13 +104,8 @@ function Panel() {
   };
   const updateSection = (id: string, patch: Partial<CustomSection>) => update({ customSections: data.customSections.map((s) => s.id === id ? { ...s, ...patch } : s) });
   const deleteSection = (id: string) => update({ customSections: data.customSections.filter((s) => s.id !== id) });
-  const moveSection = (id: string, dir: -1 | 1) => {
-    const arr = [...data.customSections];
-    const i = arr.findIndex((s) => s.id === id);
-    const j = i + dir;
-    if (i < 0 || j < 0 || j >= arr.length) return;
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-    update({ customSections: arr });
+  const reorderSections = (oldIndex: number, newIndex: number) => {
+    update({ customSections: arrayMove(data.customSections, oldIndex, newIndex) });
   };
 
   const addBlock = (sectionId: string, type: Block["type"]) => {
@@ -116,7 +114,12 @@ function Panel() {
     if (type === "heading") block = { id, type, text: "عنوان جديد" };
     else if (type === "text") block = { id, type, text: "اكتب نصك هنا..." };
     else if (type === "image") block = { id, type, src: "https://placehold.co/800x500/0d3b3e/22d3ee?text=Image", alt: "صورة" };
-    else block = { id, type, text: "اضغط هنا", link: "#" };
+    else if (type === "button") block = { id, type, text: "اضغط هنا", link: "#" };
+    else if (type === "cards") block = { id, type, items: [{ id: id + "-c1", icon: "✨", title: "بطاقة", description: "وصف البطاقة", link: "#" }] };
+    else if (type === "video") block = { id, type, url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", caption: "" };
+    else if (type === "list") block = { id, type, items: ["نقطة أولى", "نقطة ثانية"] };
+    else if (type === "divider") block = { id, type };
+    else block = { id, type: "social", items: [{ id: id + "-s1", platform: "discord", label: "Discord", link: data.discordLink }] };
     updateSection(sectionId, { blocks: [...(data.customSections.find((s) => s.id === sectionId)?.blocks ?? []), block] });
   };
   const updateBlock = (sectionId: string, blockId: string, patch: Partial<Block>) => {
@@ -129,15 +132,10 @@ function Panel() {
     if (!sec) return;
     updateSection(sectionId, { blocks: sec.blocks.filter((b) => b.id !== blockId) });
   };
-  const moveBlock = (sectionId: string, blockId: string, dir: -1 | 1) => {
+  const reorderBlocks = (sectionId: string, oldIndex: number, newIndex: number) => {
     const sec = data.customSections.find((s) => s.id === sectionId);
     if (!sec) return;
-    const arr = [...sec.blocks];
-    const i = arr.findIndex((b) => b.id === blockId);
-    const j = i + dir;
-    if (i < 0 || j < 0 || j >= arr.length) return;
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-    updateSection(sectionId, { blocks: arr });
+    updateSection(sectionId, { blocks: arrayMove(sec.blocks, oldIndex, newIndex) });
   };
 
   return (
@@ -338,55 +336,17 @@ function Panel() {
           </TabsContent>
 
           <TabsContent value="sections" className="mt-4">
-            <Section title={`أقسام مخصصة (${data.customSections.length})`} action={<Button onClick={addSection} size="sm" className="bg-accent text-accent-foreground"><Plus className="w-4 h-4 ml-1" />قسم</Button>}>
-              {data.customSections.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">لا توجد أقسام بعد. أضف واحداً وابدأ بإضافة نصوص، صور، وأزرار.</p>}
-              {data.customSections.map((sec, idx) => (
-                <div key={sec.id} className="border-2 border-accent/30 rounded-2xl p-4 space-y-3 bg-background/40">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Input value={sec.title} onChange={(e) => updateSection(sec.id, { title: e.target.value })} placeholder="عنوان القسم" className="flex-1 min-w-[150px] font-bold" />
-                    <Button size="icon" variant="outline" onClick={() => moveSection(sec.id, -1)} disabled={idx === 0}><ArrowUp className="w-4 h-4" /></Button>
-                    <Button size="icon" variant="outline" onClick={() => moveSection(sec.id, 1)} disabled={idx === data.customSections.length - 1}><ArrowDown className="w-4 h-4" /></Button>
-                    <Button size="icon" variant="destructive" onClick={() => deleteSection(sec.id)}><Trash2 className="w-4 h-4" /></Button>
-                  </div>
-
-                  <div className="space-y-2 pl-2 border-r-2 border-accent/20 pr-3">
-                    {sec.blocks.map((b, bi) => (
-                      <div key={b.id} className="bg-card border border-border rounded-lg p-3 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-accent">{labelFor(b.type)}</span>
-                          <div className="flex gap-1">
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveBlock(sec.id, b.id, -1)} disabled={bi === 0}><ArrowUp className="w-3 h-3" /></Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveBlock(sec.id, b.id, 1)} disabled={bi === sec.blocks.length - 1}><ArrowDown className="w-3 h-3" /></Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteBlock(sec.id, b.id)}><Trash2 className="w-3 h-3" /></Button>
-                          </div>
-                        </div>
-                        {b.type === "heading" && <Input value={b.text} onChange={(e) => updateBlock(sec.id, b.id, { text: e.target.value })} placeholder="عنوان" />}
-                        {b.type === "text" && <Textarea value={b.text} onChange={(e) => updateBlock(sec.id, b.id, { text: e.target.value })} placeholder="نص" rows={3} />}
-                        {b.type === "image" && (
-                          <>
-                            <ImageUpload value={b.src} onChange={(v) => updateBlock(sec.id, b.id, { src: v })} placeholder="رابط الصورة أو ارفع ملف" />
-                            <Input value={b.alt} onChange={(e) => updateBlock(sec.id, b.id, { alt: e.target.value })} placeholder="وصف الصورة" />
-                          </>
-                        )}
-                        {b.type === "button" && (
-                          <>
-                            <Input value={b.text} onChange={(e) => updateBlock(sec.id, b.id, { text: e.target.value })} placeholder="نص الزر" />
-                            <Input value={b.link} onChange={(e) => updateBlock(sec.id, b.id, { link: e.target.value })} placeholder="الرابط" />
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
-                    <Button size="sm" variant="outline" onClick={() => addBlock(sec.id, "heading")}>+ عنوان</Button>
-                    <Button size="sm" variant="outline" onClick={() => addBlock(sec.id, "text")}>+ نص</Button>
-                    <Button size="sm" variant="outline" onClick={() => addBlock(sec.id, "image")}>+ صورة</Button>
-                    <Button size="sm" variant="outline" onClick={() => addBlock(sec.id, "button")}>+ زر</Button>
-                  </div>
-                </div>
-              ))}
-            </Section>
+            <SectionsEditor
+              sections={data.customSections}
+              addSection={addSection}
+              updateSection={updateSection}
+              deleteSection={deleteSection}
+              reorderSections={reorderSections}
+              addBlock={addBlock}
+              updateBlock={updateBlock}
+              deleteBlock={deleteBlock}
+              reorderBlocks={reorderBlocks}
+            />
           </TabsContent>
 
           <TabsContent value="members" className="mt-4"><MembersAdmin /></TabsContent>
@@ -422,5 +382,306 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function labelFor(t: Block["type"]) {
-  return t === "heading" ? "عنوان" : t === "text" ? "نص" : t === "image" ? "صورة" : "زر";
+  switch (t) {
+    case "heading": return "عنوان";
+    case "text": return "نص";
+    case "image": return "صورة";
+    case "button": return "زر";
+    case "cards": return "بطاقات";
+    case "video": return "فيديو";
+    case "list": return "قائمة";
+    case "divider": return "فاصل";
+    case "social": return "سوشال ميديا";
+  }
+}
+
+// =================== Sections Editor with DnD ===================
+
+type SectionsEditorProps = {
+  sections: CustomSection[];
+  addSection: () => void;
+  updateSection: (id: string, patch: Partial<CustomSection>) => void;
+  deleteSection: (id: string) => void;
+  reorderSections: (oldIndex: number, newIndex: number) => void;
+  addBlock: (sectionId: string, type: Block["type"]) => void;
+  updateBlock: (sectionId: string, blockId: string, patch: Partial<Block>) => void;
+  deleteBlock: (sectionId: string, blockId: string) => void;
+  reorderBlocks: (sectionId: string, oldIndex: number, newIndex: number) => void;
+};
+
+function SectionsEditor(props: SectionsEditorProps) {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const handleSectionDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIndex = props.sections.findIndex((s) => s.id === active.id);
+    const newIndex = props.sections.findIndex((s) => s.id === over.id);
+    if (oldIndex >= 0 && newIndex >= 0) props.reorderSections(oldIndex, newIndex);
+  };
+
+  return (
+    <Section
+      title={`أقسام مخصصة (${props.sections.length})`}
+      action={<Button onClick={props.addSection} size="sm" className="bg-accent text-accent-foreground"><Plus className="w-4 h-4 ml-1" />قسم</Button>}
+    >
+      {props.sections.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-4">
+          لا توجد أقسام بعد. أضف واحداً وابدأ بإضافة بلوكات.
+        </p>
+      )}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSectionDragEnd}>
+        <SortableContext items={props.sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-3">
+            {props.sections.map((sec) => (
+              <SortableSection
+                key={sec.id}
+                section={sec}
+                updateSection={props.updateSection}
+                deleteSection={props.deleteSection}
+                addBlock={props.addBlock}
+                updateBlock={props.updateBlock}
+                deleteBlock={props.deleteBlock}
+                reorderBlocks={props.reorderBlocks}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+    </Section>
+  );
+}
+
+function SortableSection({
+  section, updateSection, deleteSection, addBlock, updateBlock, deleteBlock, reorderBlocks,
+}: {
+  section: CustomSection;
+  updateSection: (id: string, patch: Partial<CustomSection>) => void;
+  deleteSection: (id: string) => void;
+  addBlock: (sectionId: string, type: Block["type"]) => void;
+  updateBlock: (sectionId: string, blockId: string, patch: Partial<Block>) => void;
+  deleteBlock: (sectionId: string, blockId: string) => void;
+  reorderBlocks: (sectionId: string, oldIndex: number, newIndex: number) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const active = section.active !== false;
+
+  const handleBlockDragEnd = (e: DragEndEvent) => {
+    const { active: a, over } = e;
+    if (!over || a.id === over.id) return;
+    const oldIndex = section.blocks.findIndex((b) => b.id === a.id);
+    const newIndex = section.blocks.findIndex((b) => b.id === over.id);
+    if (oldIndex >= 0 && newIndex >= 0) reorderBlocks(section.id, oldIndex, newIndex);
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className={`border-2 rounded-2xl p-4 space-y-3 bg-background/40 ${active ? "border-accent/30" : "border-border opacity-60"}`}>
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          {...attributes}
+          {...listeners}
+          className="p-2 rounded hover:bg-muted cursor-grab active:cursor-grabbing touch-none"
+          aria-label="اسحب لإعادة الترتيب"
+          type="button"
+        >
+          <GripVertical className="w-5 h-5 text-muted-foreground" />
+        </button>
+        <Input
+          value={section.title}
+          onChange={(e) => updateSection(section.id, { title: e.target.value })}
+          placeholder="عنوان القسم"
+          className="flex-1 min-w-[120px] font-bold"
+        />
+        <Input
+          value={section.slug}
+          onChange={(e) => updateSection(section.id, { slug: e.target.value.replace(/\s+/g, "-").toLowerCase() })}
+          placeholder="slug"
+          className="w-32 text-xs"
+        />
+        <div className="flex items-center gap-1.5 px-2">
+          <Switch checked={active} onCheckedChange={(v) => updateSection(section.id, { active: v })} />
+          <Label className="text-xs">{active ? "ظاهر" : "مخفي"}</Label>
+        </div>
+        <Button size="icon" variant="destructive" onClick={() => deleteSection(section.id)}><Trash2 className="w-4 h-4" /></Button>
+      </div>
+
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleBlockDragEnd}>
+        <SortableContext items={section.blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-2 border-r-2 border-accent/20 pr-3">
+            {section.blocks.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-3">القسم فارغ — أضف بلوكات من الأسفل</p>
+            )}
+            {section.blocks.map((b) => (
+              <SortableBlock
+                key={b.id}
+                block={b}
+                onChange={(patch) => updateBlock(section.id, b.id, patch)}
+                onDelete={() => deleteBlock(section.id, b.id)}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+
+      <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+        <Button size="sm" variant="outline" onClick={() => addBlock(section.id, "heading")}>+ عنوان</Button>
+        <Button size="sm" variant="outline" onClick={() => addBlock(section.id, "text")}>+ نص</Button>
+        <Button size="sm" variant="outline" onClick={() => addBlock(section.id, "image")}>+ صورة</Button>
+        <Button size="sm" variant="outline" onClick={() => addBlock(section.id, "button")}>+ زر</Button>
+        <Button size="sm" variant="outline" onClick={() => addBlock(section.id, "cards")}>+ بطاقات</Button>
+        <Button size="sm" variant="outline" onClick={() => addBlock(section.id, "video")}>+ فيديو</Button>
+        <Button size="sm" variant="outline" onClick={() => addBlock(section.id, "list")}>+ قائمة</Button>
+        <Button size="sm" variant="outline" onClick={() => addBlock(section.id, "social")}>+ سوشال ميديا</Button>
+        <Button size="sm" variant="outline" onClick={() => addBlock(section.id, "divider")}>+ فاصل</Button>
+      </div>
+    </div>
+  );
+}
+
+function SortableBlock({
+  block, onChange, onDelete,
+}: {
+  block: Block;
+  onChange: (patch: Partial<Block>) => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+
+  return (
+    <div ref={setNodeRef} style={style} className="bg-card border border-border rounded-lg p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            {...attributes}
+            {...listeners}
+            className="p-1 rounded hover:bg-muted cursor-grab active:cursor-grabbing touch-none"
+            aria-label="اسحب البلوك"
+            type="button"
+          >
+            <GripVertical className="w-4 h-4 text-muted-foreground" />
+          </button>
+          <span className="text-xs font-bold text-accent">{labelFor(block.type)}</span>
+        </div>
+        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={onDelete}><Trash2 className="w-3 h-3" /></Button>
+      </div>
+      <BlockEditor block={block} onChange={onChange} />
+    </div>
+  );
+}
+
+function BlockEditor({ block, onChange }: { block: Block; onChange: (patch: Partial<Block>) => void }) {
+  if (block.type === "heading")
+    return <Input value={block.text} onChange={(e) => onChange({ text: e.target.value } as Partial<Block>)} placeholder="عنوان" />;
+
+  if (block.type === "text")
+    return <Textarea value={block.text} onChange={(e) => onChange({ text: e.target.value } as Partial<Block>)} placeholder="نص" rows={3} />;
+
+  if (block.type === "image")
+    return (
+      <>
+        <ImageUpload value={block.src} onChange={(v) => onChange({ src: v } as Partial<Block>)} placeholder="رابط الصورة أو ارفع ملف" />
+        <Input value={block.alt} onChange={(e) => onChange({ alt: e.target.value } as Partial<Block>)} placeholder="وصف الصورة" />
+      </>
+    );
+
+  if (block.type === "button")
+    return (
+      <>
+        <Input value={block.text} onChange={(e) => onChange({ text: e.target.value } as Partial<Block>)} placeholder="نص الزر" />
+        <Input value={block.link} onChange={(e) => onChange({ link: e.target.value } as Partial<Block>)} placeholder="الرابط" />
+      </>
+    );
+
+  if (block.type === "video")
+    return (
+      <>
+        <Input value={block.url} onChange={(e) => onChange({ url: e.target.value } as Partial<Block>)} placeholder="رابط YouTube / Twitch / mp4" />
+        <Input value={block.caption ?? ""} onChange={(e) => onChange({ caption: e.target.value } as Partial<Block>)} placeholder="تعليق (اختياري)" />
+      </>
+    );
+
+  if (block.type === "list") {
+    const items = block.items;
+    const setItem = (i: number, v: string) => onChange({ items: items.map((it, idx) => idx === i ? v : it) } as Partial<Block>);
+    const addItem = () => onChange({ items: [...items, "نقطة جديدة"] } as Partial<Block>);
+    const removeItem = (i: number) => onChange({ items: items.filter((_, idx) => idx !== i) } as Partial<Block>);
+    const moveItem = (i: number, dir: -1 | 1) => {
+      const j = i + dir;
+      if (j < 0 || j >= items.length) return;
+      const arr = [...items];
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      onChange({ items: arr } as Partial<Block>);
+    };
+    return (
+      <div className="space-y-2">
+        {items.map((it, i) => (
+          <div key={i} className="flex gap-1 items-center">
+            <Input value={it} onChange={(e) => setItem(i, e.target.value)} />
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => moveItem(i, -1)} disabled={i === 0}><ArrowUp className="w-3 h-3" /></Button>
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => moveItem(i, 1)} disabled={i === items.length - 1}><ArrowDown className="w-3 h-3" /></Button>
+            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeItem(i)}><Trash2 className="w-3 h-3" /></Button>
+          </div>
+        ))}
+        <Button size="sm" variant="outline" onClick={addItem}><Plus className="w-3 h-3 ml-1" />نقطة</Button>
+      </div>
+    );
+  }
+
+  if (block.type === "cards") {
+    const items = block.items;
+    const setCard = (id: string, patch: Partial<CardItem>) =>
+      onChange({ items: items.map((c) => c.id === id ? { ...c, ...patch } : c) } as Partial<Block>);
+    const addCard = () => onChange({
+      items: [...items, { id: Date.now().toString(), icon: "✨", title: "بطاقة", description: "وصف", link: "#" }],
+    } as Partial<Block>);
+    const removeCard = (id: string) => onChange({ items: items.filter((c) => c.id !== id) } as Partial<Block>);
+    return (
+      <div className="space-y-2">
+        {items.map((c) => (
+          <div key={c.id} className="border border-border rounded p-2 space-y-2 bg-background/50">
+            <div className="grid grid-cols-[60px_1fr_auto] gap-2 items-start">
+              <Input value={c.icon} onChange={(e) => setCard(c.id, { icon: e.target.value })} placeholder="🎮" className="text-xl text-center" />
+              <Input value={c.title} onChange={(e) => setCard(c.id, { title: e.target.value })} placeholder="عنوان البطاقة" />
+              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeCard(c.id)}><Trash2 className="w-3 h-3" /></Button>
+            </div>
+            <Textarea value={c.description} onChange={(e) => setCard(c.id, { description: e.target.value })} placeholder="الوصف" rows={2} />
+            <Input value={c.link} onChange={(e) => setCard(c.id, { link: e.target.value })} placeholder="رابط (اختياري)" />
+            <ImageUpload value={c.image ?? ""} onChange={(v) => setCard(c.id, { image: v })} placeholder="صورة بدل الأيقونة (اختياري)" />
+          </div>
+        ))}
+        <Button size="sm" variant="outline" onClick={addCard}><Plus className="w-3 h-3 ml-1" />بطاقة</Button>
+      </div>
+    );
+  }
+
+  if (block.type === "social") {
+    const items = block.items;
+    const setItem = (id: string, patch: Partial<SocialItem>) =>
+      onChange({ items: items.map((s) => s.id === id ? { ...s, ...patch } : s) } as Partial<Block>);
+    const addItem = () => onChange({
+      items: [...items, { id: Date.now().toString(), platform: "twitter", label: "Twitter", link: "https://" }],
+    } as Partial<Block>);
+    const removeItem = (id: string) => onChange({ items: items.filter((s) => s.id !== id) } as Partial<Block>);
+    return (
+      <div className="space-y-2">
+        {items.map((s) => (
+          <div key={s.id} className="grid grid-cols-[120px_1fr_1fr_auto] gap-2">
+            <Input value={s.platform} onChange={(e) => setItem(s.id, { platform: e.target.value })} placeholder="discord/twitter/..." />
+            <Input value={s.label} onChange={(e) => setItem(s.id, { label: e.target.value })} placeholder="اسم العرض" />
+            <Input value={s.link} onChange={(e) => setItem(s.id, { link: e.target.value })} placeholder="https://" />
+            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeItem(s.id)}><Trash2 className="w-3 h-3" /></Button>
+          </div>
+        ))}
+        <Button size="sm" variant="outline" onClick={addItem}><Plus className="w-3 h-3 ml-1" />حساب</Button>
+      </div>
+    );
+  }
+
+  if (block.type === "divider")
+    return <p className="text-xs text-muted-foreground text-center py-1">— خط فاصل —</p>;
+
+  return null;
 }

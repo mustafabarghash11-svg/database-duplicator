@@ -20,16 +20,38 @@ export type Feature = {
   icon: string;
 };
 
+export type CardItem = {
+  id: string;
+  icon: string; // emoji or short text
+  image?: string; // optional image URL
+  title: string;
+  description: string;
+  link: string;
+};
+
+export type SocialItem = {
+  id: string;
+  platform: string; // twitter, instagram, tiktok, youtube, twitch, discord, facebook, custom
+  label: string;
+  link: string;
+};
+
 export type Block =
   | { id: string; type: "heading"; text: string }
   | { id: string; type: "text"; text: string }
   | { id: string; type: "image"; src: string; alt: string }
-  | { id: string; type: "button"; text: string; link: string };
+  | { id: string; type: "button"; text: string; link: string }
+  | { id: string; type: "cards"; items: CardItem[] }
+  | { id: string; type: "video"; url: string; caption?: string }
+  | { id: string; type: "list"; items: string[] }
+  | { id: string; type: "divider" }
+  | { id: string; type: "social"; items: SocialItem[] };
 
 export type CustomSection = {
   id: string;
   slug: string; // used in nav
   title: string;
+  active?: boolean; // default true; hide section when false
   blocks: Block[];
 };
 

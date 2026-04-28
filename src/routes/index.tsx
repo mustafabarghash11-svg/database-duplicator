@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { VisitorCounter } from "@/components/VisitorCounter";
 import { DiscordLiveCount } from "@/components/DiscordLiveCount";
 import { EventCountdown } from "@/components/EventCountdown";
+import { CustomSectionView } from "@/components/CustomSectionView";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Route = createFileRoute("/")({
@@ -99,6 +100,12 @@ function Home() {
           </div>
         </section>
       )}
+
+      {/* Custom sections */}
+      {data.customSections.filter((s) => s.active !== false).map((s) => (
+        <CustomSectionView key={s.id} section={s} />
+      ))}
+
 
       <footer className="border-t border-border py-8 px-6 text-center text-sm text-muted-foreground">
         © {new Date().getFullYear()} {data.siteName}
