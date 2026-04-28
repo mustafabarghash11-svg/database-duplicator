@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Plus, Trophy, ShoppingBag, Package, Users, Sparkles, Pencil, RefreshCw, Save, X } from "lucide-react";
+import { Trash2, Plus, Trophy, ShoppingBag, Package, Users, Sparkles, Pencil, RefreshCw, Save, X, Check, ShieldQuestion, UsersRound } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast, Toaster } from "sonner";
 
 export const Route = createFileRoute("/admin")({
