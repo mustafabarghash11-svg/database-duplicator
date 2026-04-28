@@ -393,6 +393,7 @@ function Panel() {
           <TabsContent value="points" className="mt-4"><PointsAdmin /></TabsContent>
           <TabsContent value="tournaments" className="mt-4"><TournamentsAdmin /></TabsContent>
           <TabsContent value="registrations" className="mt-4"><RegistrationsAdmin /></TabsContent>
+          <TabsContent value="teams" className="mt-4"><TeamsAdmin /></TabsContent>
           <TabsContent value="shop" className="mt-4"><ShopAdmin /></TabsContent>
           <TabsContent value="orders" className="mt-4"><OrdersAdmin /></TabsContent>
         </Tabs>
