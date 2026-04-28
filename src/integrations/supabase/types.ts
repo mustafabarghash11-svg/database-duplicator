@@ -14,16 +14,292 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          discord_username: string | null
+          display_name: string
+          favorite_game: string | null
+          id: string
+          level: number
+          points: number
+          updated_at: string
+          user_id: string
+          xp: number
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          discord_username?: string | null
+          display_name: string
+          favorite_game?: string | null
+          id?: string
+          level?: number
+          points?: number
+          updated_at?: string
+          user_id: string
+          xp?: number
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          discord_username?: string | null
+          display_name?: string
+          favorite_game?: string | null
+          id?: string
+          level?: number
+          points?: number
+          updated_at?: string
+          user_id?: string
+          xp?: number
+        }
+        Relationships: []
+      }
+      shop_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          price_points: number
+          stock: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          price_points: number
+          stock?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          price_points?: number
+          stock?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shop_orders: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          item_id: string
+          points_spent: number
+          status: Database["public"]["Enums"]["shop_order_status"]
+          updated_at: string
+          user_id: string
+          user_notes: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          item_id: string
+          points_spent: number
+          status?: Database["public"]["Enums"]["shop_order_status"]
+          updated_at?: string
+          user_id: string
+          user_notes?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          item_id?: string
+          points_spent?: number
+          status?: Database["public"]["Enums"]["shop_order_status"]
+          updated_at?: string
+          user_id?: string
+          user_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_orders_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_data: {
+        Row: {
+          data: Json
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          data?: Json
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          data?: Json
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tournament_registrations: {
+        Row: {
+          created_at: string
+          id: string
+          in_game_id: string | null
+          notes: string | null
+          tournament_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          in_game_id?: string | null
+          notes?: string | null
+          tournament_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          in_game_id?: string | null
+          notes?: string | null
+          tournament_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_registrations_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          created_at: string
+          description: string | null
+          game: string
+          id: string
+          image_url: string | null
+          max_participants: number
+          prize: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["tournament_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          game: string
+          id?: string
+          image_url?: string | null
+          max_participants?: number
+          prize?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["tournament_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          game?: string
+          id?: string
+          image_url?: string | null
+          max_participants?: number
+          prize?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["tournament_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      visitor_counter: {
+        Row: {
+          count: number
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          count?: number
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          count?: number
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      increment_visitor_count: { Args: never; Returns: number }
+      redeem_shop_item: {
+        Args: { _item_id: string; _user_notes: string }
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      shop_order_status: "pending" | "fulfilled" | "cancelled"
+      tournament_status:
+        | "upcoming"
+        | "open"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +426,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      shop_order_status: ["pending", "fulfilled", "cancelled"],
+      tournament_status: [
+        "upcoming",
+        "open",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
+    },
   },
 } as const
