@@ -195,6 +195,7 @@ function Panel() {
             <TabsTrigger value="points" className="gap-1.5"><Coins className="w-4 h-4" />نقاط/XP</TabsTrigger>
             <TabsTrigger value="tournaments" className="gap-1.5"><Trophy className="w-4 h-4" />البطولات</TabsTrigger>
             <TabsTrigger value="registrations" className="gap-1.5"><Users className="w-4 h-4" />تسجيلات</TabsTrigger>
+            <TabsTrigger value="teams" className="gap-1.5"><Users className="w-4 h-4" />الفرق</TabsTrigger>
             <TabsTrigger value="shop" className="gap-1.5"><ShoppingBag className="w-4 h-4" />المتجر</TabsTrigger>
             <TabsTrigger value="orders" className="gap-1.5"><Package className="w-4 h-4" />الطلبات</TabsTrigger>
           </TabsList>
