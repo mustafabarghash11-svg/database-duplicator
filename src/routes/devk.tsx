@@ -336,55 +336,17 @@ function Panel() {
           </TabsContent>
 
           <TabsContent value="sections" className="mt-4">
-            <Section title={`أقسام مخصصة (${data.customSections.length})`} action={<Button onClick={addSection} size="sm" className="bg-accent text-accent-foreground"><Plus className="w-4 h-4 ml-1" />قسم</Button>}>
-              {data.customSections.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">لا توجد أقسام بعد. أضف واحداً وابدأ بإضافة نصوص، صور، وأزرار.</p>}
-              {data.customSections.map((sec, idx) => (
-                <div key={sec.id} className="border-2 border-accent/30 rounded-2xl p-4 space-y-3 bg-background/40">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Input value={sec.title} onChange={(e) => updateSection(sec.id, { title: e.target.value })} placeholder="عنوان القسم" className="flex-1 min-w-[150px] font-bold" />
-                    <Button size="icon" variant="outline" onClick={() => moveSection(sec.id, -1)} disabled={idx === 0}><ArrowUp className="w-4 h-4" /></Button>
-                    <Button size="icon" variant="outline" onClick={() => moveSection(sec.id, 1)} disabled={idx === data.customSections.length - 1}><ArrowDown className="w-4 h-4" /></Button>
-                    <Button size="icon" variant="destructive" onClick={() => deleteSection(sec.id)}><Trash2 className="w-4 h-4" /></Button>
-                  </div>
-
-                  <div className="space-y-2 pl-2 border-r-2 border-accent/20 pr-3">
-                    {sec.blocks.map((b, bi) => (
-                      <div key={b.id} className="bg-card border border-border rounded-lg p-3 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-accent">{labelFor(b.type)}</span>
-                          <div className="flex gap-1">
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveBlock(sec.id, b.id, -1)} disabled={bi === 0}><ArrowUp className="w-3 h-3" /></Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveBlock(sec.id, b.id, 1)} disabled={bi === sec.blocks.length - 1}><ArrowDown className="w-3 h-3" /></Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteBlock(sec.id, b.id)}><Trash2 className="w-3 h-3" /></Button>
-                          </div>
-                        </div>
-                        {b.type === "heading" && <Input value={b.text} onChange={(e) => updateBlock(sec.id, b.id, { text: e.target.value })} placeholder="عنوان" />}
-                        {b.type === "text" && <Textarea value={b.text} onChange={(e) => updateBlock(sec.id, b.id, { text: e.target.value })} placeholder="نص" rows={3} />}
-                        {b.type === "image" && (
-                          <>
-                            <ImageUpload value={b.src} onChange={(v) => updateBlock(sec.id, b.id, { src: v })} placeholder="رابط الصورة أو ارفع ملف" />
-                            <Input value={b.alt} onChange={(e) => updateBlock(sec.id, b.id, { alt: e.target.value })} placeholder="وصف الصورة" />
-                          </>
-                        )}
-                        {b.type === "button" && (
-                          <>
-                            <Input value={b.text} onChange={(e) => updateBlock(sec.id, b.id, { text: e.target.value })} placeholder="نص الزر" />
-                            <Input value={b.link} onChange={(e) => updateBlock(sec.id, b.id, { link: e.target.value })} placeholder="الرابط" />
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
-                    <Button size="sm" variant="outline" onClick={() => addBlock(sec.id, "heading")}>+ عنوان</Button>
-                    <Button size="sm" variant="outline" onClick={() => addBlock(sec.id, "text")}>+ نص</Button>
-                    <Button size="sm" variant="outline" onClick={() => addBlock(sec.id, "image")}>+ صورة</Button>
-                    <Button size="sm" variant="outline" onClick={() => addBlock(sec.id, "button")}>+ زر</Button>
-                  </div>
-                </div>
-              ))}
-            </Section>
+            <SectionsEditor
+              sections={data.customSections}
+              addSection={addSection}
+              updateSection={updateSection}
+              deleteSection={deleteSection}
+              reorderSections={reorderSections}
+              addBlock={addBlock}
+              updateBlock={updateBlock}
+              deleteBlock={deleteBlock}
+              reorderBlocks={reorderBlocks}
+            />
           </TabsContent>
 
           <TabsContent value="members" className="mt-4"><MembersAdmin /></TabsContent>
