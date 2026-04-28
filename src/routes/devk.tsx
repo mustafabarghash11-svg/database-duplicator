@@ -10,7 +10,7 @@ import { toast, Toaster } from "sonner";
 import { Trash2, Plus, ArrowUp, ArrowDown, Settings, Gamepad2, BarChart3, Sparkles, Video, Trophy, Crown, Layers, Users, Coins, ShoppingBag, Package, Save, RotateCcw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/ImageUpload";
-import { MembersAdmin, PointsAdmin, TournamentsAdmin, ShopAdmin, OrdersAdmin, RegistrationsAdmin } from "@/routes/admin";
+import { MembersAdmin, PointsAdmin, TournamentsAdmin, ShopAdmin, OrdersAdmin, RegistrationsAdmin, TeamsAdmin } from "@/routes/admin";
 
 export const Route = createFileRoute("/devk")({
   head: () => ({ meta: [{ title: "Dev Panel" }, { name: "robots", content: "noindex" }] }),
