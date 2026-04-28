@@ -129,7 +129,7 @@ function notify(d: SiteData) {
 }
 
 async function fetchRemote(): Promise<SiteData> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("site_data")
     .select("data")
     .eq("id", SITE_ROW_ID)
@@ -208,9 +208,9 @@ export function loadData(): SiteData {
 
 export async function saveData(data: SiteData) {
   notify(data); // optimistic update for current client
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("site_data")
-    .upsert({ id: SITE_ROW_ID, data: data as unknown as Record<string, unknown>, updated_at: new Date().toISOString() });
+    .upsert({ id: SITE_ROW_ID, data, updated_at: new Date().toISOString() });
   if (error) {
     console.error("[site_data] save failed:", error.message);
     throw error;
