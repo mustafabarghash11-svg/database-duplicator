@@ -61,7 +61,7 @@ function DevPanel() {
 }
 
 function Panel() {
-  const [data, setData] = useSiteData();
+  const { data, setData, save, reset, dirty, saving } = useSiteDataDraft();
   const update = (patch: Partial<typeof data>) => setData({ ...data, ...patch });
 
   // Games
