@@ -101,7 +101,11 @@ function TournamentCard({ t, count, isRegistered, userLoggedIn, onChange }: {
   t: Tournament; count: number; isRegistered: boolean; userLoggedIn: boolean; onChange: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [realName, setRealName] = useState("");
+  const [age, setAge] = useState("");
+  const [inGameName, setInGameName] = useState("");
   const [inGameId, setInGameId] = useState("");
+  const [discordUsername, setDiscordUsername] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -110,13 +114,26 @@ function TournamentCard({ t, count, isRegistered, userLoggedIn, onChange }: {
   const isOpen = t.status === "open" || t.status === "upcoming";
 
   async function register() {
-    setBusy(true); setErr(null);
+    setErr(null);
+    if (!realName.trim()) return setErr("الاسم الحقيقي مطلوب");
+    const ageNum = Number(age);
+    if (!ageNum || ageNum < 8 || ageNum > 100) return setErr("العمر غير صحيح");
+    if (!inGameName.trim()) return setErr("اسمك في اللعبة مطلوب");
+    if (!inGameId.trim()) return setErr("ID داخل اللعبة مطلوب");
+    if (!discordUsername.trim()) return setErr("يوزر الديسكورد مطلوب");
+
+    setBusy(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setErr("سجل دخول أولاً"); setBusy(false); return; }
     const { error } = await supabase.from("tournament_registrations").insert({
-      tournament_id: t.id, user_id: user.id,
-      in_game_id: inGameId.trim().slice(0, 60) || null,
-      notes: notes.trim().slice(0, 280) || null,
+      tournament_id: t.id,
+      user_id: user.id,
+      real_name: realName.trim().slice(0, 80),
+      age: ageNum,
+      in_game_id: inGameId.trim().slice(0, 60),
+      discord_username: discordUsername.trim().slice(0, 60),
+      notes: (inGameName.trim() ? `اسم في اللعبة: ${inGameName.trim().slice(0, 60)}` : "") +
+             (notes.trim() ? `\n${notes.trim().slice(0, 280)}` : "") || null,
     });
     setBusy(false);
     if (error) setErr(error.message);
@@ -151,7 +168,7 @@ function TournamentCard({ t, count, isRegistered, userLoggedIn, onChange }: {
         {!userLoggedIn ? (
           <Button asChild variant="outline" className="mt-4"><Link to="/auth">سجل دخول للتسجيل</Link></Button>
         ) : isRegistered ? (
-          <Button onClick={cancel} variant="outline" className="mt-4">إلغاء التسجيل ✓</Button>
+          <Button onClick={cancel} variant="outline" className="mt-4">إلغاء التسجيل ✓ (قيد المراجعة)</Button>
         ) : !isOpen ? (
           <Button disabled className="mt-4">مغلقة</Button>
         ) : full ? (
@@ -163,20 +180,37 @@ function TournamentCard({ t, count, isRegistered, userLoggedIn, onChange }: {
                 <Trophy className="w-4 h-4 ml-2" /> سجّل الآن
               </Button>
             </DialogTrigger>
-            <DialogContent dir="rtl">
+            <DialogContent dir="rtl" className="max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>التسجيل في {t.title}</DialogTitle></DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <Label>ID داخل اللعبة</Label>
-                  <Input value={inGameId} onChange={(e) => setInGameId(e.target.value)} placeholder="مثلاً: KhayalPro#1234" maxLength={60} />
+                  <Label>الاسم الحقيقي *</Label>
+                  <Input value={realName} onChange={(e) => setRealName(e.target.value)} maxLength={80} placeholder="اسمك الكامل" />
+                </div>
+                <div>
+                  <Label>العمر *</Label>
+                  <Input type="number" inputMode="numeric" value={age} onChange={(e) => setAge(e.target.value)} min={8} max={100} placeholder="مثلاً: 18" />
+                </div>
+                <div>
+                  <Label>اسمك في اللعبة *</Label>
+                  <Input value={inGameName} onChange={(e) => setInGameName(e.target.value)} maxLength={60} placeholder="Username داخل اللعبة" />
+                </div>
+                <div>
+                  <Label>ID داخل اللعبة *</Label>
+                  <Input value={inGameId} onChange={(e) => setInGameId(e.target.value)} maxLength={60} placeholder="مثلاً: 1234567890" />
+                </div>
+                <div>
+                  <Label>يوزر الديسكورد *</Label>
+                  <Input value={discordUsername} onChange={(e) => setDiscordUsername(e.target.value)} maxLength={60} placeholder="مثلاً: khayal_pro" />
                 </div>
                 <div>
                   <Label>ملاحظات (اختياري)</Label>
-                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={280} rows={3} />
+                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={280} rows={2} />
                 </div>
                 {err && <p className="text-sm text-red-500">{err}</p>}
+                <p className="text-xs text-muted-foreground">سيتم مراجعة طلبك من قبل المطور وإشعارك بالقبول أو الرفض.</p>
                 <Button onClick={register} disabled={busy} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-bold">
-                  {busy ? "..." : "تأكيد التسجيل (+50 XP +10 نقاط)"}
+                  {busy ? "جارٍ الإرسال..." : "إرسال طلب التسجيل"}
                 </Button>
               </div>
             </DialogContent>

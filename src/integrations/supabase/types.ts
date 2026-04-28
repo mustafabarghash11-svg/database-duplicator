@@ -159,32 +159,95 @@ export type Database = {
       }
       tournament_registrations: {
         Row: {
+          admin_notes: string | null
+          age: number | null
           created_at: string
+          discord_username: string | null
           id: string
           in_game_id: string | null
           notes: string | null
+          real_name: string | null
+          status: Database["public"]["Enums"]["registration_status"]
+          team_id: string | null
           tournament_id: string
           user_id: string
         }
         Insert: {
+          admin_notes?: string | null
+          age?: number | null
           created_at?: string
+          discord_username?: string | null
           id?: string
           in_game_id?: string | null
           notes?: string | null
+          real_name?: string | null
+          status?: Database["public"]["Enums"]["registration_status"]
+          team_id?: string | null
           tournament_id: string
           user_id: string
         }
         Update: {
+          admin_notes?: string | null
+          age?: number | null
           created_at?: string
+          discord_username?: string | null
           id?: string
           in_game_id?: string | null
           notes?: string | null
+          real_name?: string | null
+          status?: Database["public"]["Enums"]["registration_status"]
+          team_id?: string | null
           tournament_id?: string
           user_id?: string
         }
         Relationships: [
           {
+            foreignKeyName: "tournament_registrations_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_teams"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tournament_registrations_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_teams: {
+        Row: {
+          captain_user_id: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          captain_user_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          captain_user_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_teams_tournament_id_fkey"
             columns: ["tournament_id"]
             isOneToOne: false
             referencedRelation: "tournaments"
@@ -293,6 +356,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      registration_status: "pending" | "approved" | "rejected"
       shop_order_status: "pending" | "fulfilled" | "cancelled"
       tournament_status:
         | "upcoming"
@@ -428,6 +492,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      registration_status: ["pending", "approved", "rejected"],
       shop_order_status: ["pending", "fulfilled", "cancelled"],
       tournament_status: [
         "upcoming",
