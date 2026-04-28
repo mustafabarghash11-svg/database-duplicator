@@ -101,6 +101,12 @@ function Home() {
         </section>
       )}
 
+      {/* Custom sections */}
+      {data.customSections.filter((s) => s.active !== false).map((s) => (
+        <CustomSectionView key={s.id} section={s} />
+      ))}
+
+
       <footer className="border-t border-border py-8 px-6 text-center text-sm text-muted-foreground">
         © {new Date().getFullYear()} {data.siteName}
       </footer>
