@@ -194,10 +194,14 @@ export function TournamentsAdmin() {
 // ============= REGISTRATIONS =============
 export function RegistrationsAdmin() {
   const [list, setList] = useState<any[]>([]);
+  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+  const [teams, setTeams] = useState<any[]>([]);
+  const [editingNote, setEditingNote] = useState<Record<string, string>>({});
+
   async function load() {
     const { data } = await supabase
       .from("tournament_registrations")
-      .select("id, in_game_id, notes, created_at, user_id, tournament_id, tournaments(title, game)")
+      .select("id, in_game_id, notes, created_at, user_id, tournament_id, real_name, age, discord_username, status, admin_notes, team_id, tournaments(title, game)")
       .order("created_at", { ascending: false });
     if (data && data.length) {
       const userIds = Array.from(new Set(data.map((d: any) => d.user_id)));
@@ -206,44 +210,239 @@ export function RegistrationsAdmin() {
       (profs ?? []).forEach((p: any) => { map[p.user_id] = p; });
       setList(data.map((d: any) => ({ ...d, profile: map[d.user_id] })));
     } else setList([]);
+    const { data: tms } = await supabase.from("tournament_teams").select("id, name, tournament_id");
+    setTeams(tms ?? []);
   }
   useEffect(() => { load(); }, []);
+
+  async function setStatus(id: string, status: "approved" | "rejected" | "pending") {
+    const adminNote = editingNote[id];
+    const patch: any = { status };
+    if (adminNote !== undefined) patch.admin_notes = adminNote || null;
+    const { error } = await supabase.from("tournament_registrations").update(patch).eq("id", id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(status === "approved" ? "تم القبول" : status === "rejected" ? "تم الرفض" : "أُعيد للمراجعة");
+      load();
+    }
+  }
+
+  async function assignTeam(id: string, teamId: string | null) {
+    const { error } = await supabase.from("tournament_registrations").update({ team_id: teamId }).eq("id", id);
+    if (error) toast.error(error.message); else { toast.success("تم تعيين الفريق"); load(); }
+  }
+
   async function remove(id: string) {
-    if (!confirm("حذف التسجيل؟")) return;
+    if (!confirm("حذف التسجيل نهائياً؟")) return;
     const { error } = await supabase.from("tournament_registrations").delete().eq("id", id);
     if (error) toast.error(error.message); else { toast.success("حُذف"); load(); }
   }
+
+  const filtered = filter === "all" ? list : list.filter((r) => r.status === filter);
+  const counts = {
+    pending: list.filter((r) => r.status === "pending").length,
+    approved: list.filter((r) => r.status === "approved").length,
+    rejected: list.filter((r) => r.status === "rejected").length,
+  };
+
   return (
-    <TableShell title="جدول تسجيلات البطولات" count={list.length} onReload={load}>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>العضو</TableHead>
-            <TableHead>Discord</TableHead>
-            <TableHead>البطولة</TableHead>
-            <TableHead>اللعبة</TableHead>
-            <TableHead>ID داخل اللعبة</TableHead>
-            <TableHead>ملاحظات</TableHead>
-            <TableHead>التاريخ</TableHead>
-            <TableHead></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {list.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">لا توجد تسجيلات</TableCell></TableRow>}
-          {list.map((r) => (
-            <TableRow key={r.id}>
-              <TableCell className="font-bold">{r.profile?.display_name ?? "—"}</TableCell>
-              <TableCell className="text-xs">{r.profile?.discord_username ?? "—"}</TableCell>
-              <TableCell>{r.tournaments?.title ?? "—"}</TableCell>
-              <TableCell>{r.tournaments?.game ?? "—"}</TableCell>
-              <TableCell className="text-xs">{r.in_game_id ?? "—"}</TableCell>
-              <TableCell className="text-xs max-w-xs truncate">{r.notes ?? "—"}</TableCell>
-              <TableCell className="text-xs whitespace-nowrap">{new Date(r.created_at).toLocaleString("ar")}</TableCell>
-              <TableCell><Button size="icon" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button></TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <TableShell title="طلبات التسجيل" count={filtered.length} onReload={load}>
+      <div className="flex flex-wrap gap-2 mb-4">
+        <Button size="sm" variant={filter === "pending" ? "default" : "outline"} onClick={() => setFilter("pending")}>
+          <ShieldQuestion className="w-4 h-4 ml-1" />قيد المراجعة ({counts.pending})
+        </Button>
+        <Button size="sm" variant={filter === "approved" ? "default" : "outline"} onClick={() => setFilter("approved")}>
+          <Check className="w-4 h-4 ml-1" />مقبولة ({counts.approved})
+        </Button>
+        <Button size="sm" variant={filter === "rejected" ? "default" : "outline"} onClick={() => setFilter("rejected")}>
+          <X className="w-4 h-4 ml-1" />مرفوضة ({counts.rejected})
+        </Button>
+        <Button size="sm" variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")}>
+          الكل ({list.length})
+        </Button>
+      </div>
+      <div className="space-y-3">
+        {filtered.length === 0 && <p className="text-center py-8 text-muted-foreground">لا توجد تسجيلات</p>}
+        {filtered.map((r) => {
+          const tournamentTeams = teams.filter((tm) => tm.tournament_id === r.tournament_id);
+          return (
+            <div key={r.id} className="border border-border rounded-xl p-4 space-y-3 bg-card">
+              <div className="flex items-start justify-between flex-wrap gap-2">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="font-black text-lg">{r.real_name ?? r.profile?.display_name ?? "—"}</h4>
+                    {r.status === "pending" && <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">قيد المراجعة</Badge>}
+                    {r.status === "approved" && <Badge className="bg-green-600 text-white">مقبول</Badge>}
+                    {r.status === "rejected" && <Badge variant="destructive">مرفوض</Badge>}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {r.tournaments?.title} • {r.tournaments?.game} • {new Date(r.created_at).toLocaleString("ar")}
+                  </p>
+                </div>
+                <Button size="icon" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+              </div>
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
+                <div><span className="text-muted-foreground">العمر:</span> {r.age ?? "—"}</div>
+                <div><span className="text-muted-foreground">ID اللعبة:</span> {r.in_game_id ?? "—"}</div>
+                <div><span className="text-muted-foreground">ديسكورد:</span> {r.discord_username ?? r.profile?.discord_username ?? "—"}</div>
+              </div>
+
+              {r.notes && <div className="text-xs bg-muted/40 rounded-lg p-2"><span className="text-muted-foreground">ملاحظة العضو: </span>{r.notes}</div>}
+
+              <div className="space-y-2">
+                <Label className="text-xs">ملاحظة المطور (اختياري)</Label>
+                <Textarea
+                  rows={2}
+                  defaultValue={r.admin_notes ?? ""}
+                  onChange={(e) => setEditingNote((s) => ({ ...s, [r.id]: e.target.value }))}
+                  placeholder="ستظهر للعضو إن أردت..."
+                />
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                {r.status !== "approved" && (
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => setStatus(r.id, "approved")}>
+                    <Check className="w-4 h-4 ml-1" />قبول
+                  </Button>
+                )}
+                {r.status !== "rejected" && (
+                  <Button size="sm" variant="destructive" onClick={() => setStatus(r.id, "rejected")}>
+                    <X className="w-4 h-4 ml-1" />رفض
+                  </Button>
+                )}
+                {r.status !== "pending" && (
+                  <Button size="sm" variant="outline" onClick={() => setStatus(r.id, "pending")}>
+                    <RefreshCw className="w-4 h-4 ml-1" />إعادة للمراجعة
+                  </Button>
+                )}
+
+                {r.status === "approved" && (
+                  <div className="flex items-center gap-2 mr-auto">
+                    <Label className="text-xs">الفريق:</Label>
+                    <Select value={r.team_id ?? "none"} onValueChange={(v) => assignTeam(r.id, v === "none" ? null : v)}>
+                      <SelectTrigger className="h-8 w-48"><SelectValue placeholder="بدون فريق" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">بدون فريق</SelectItem>
+                        {tournamentTeams.map((tm) => <SelectItem key={tm.id} value={tm.id}>{tm.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </TableShell>
+  );
+}
+
+// ============= TEAMS =============
+export function TeamsAdmin() {
+  const [tournaments, setTournaments] = useState<any[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [members, setMembers] = useState<Record<string, any[]>>({});
+  const [selectedTournament, setSelectedTournament] = useState<string>("");
+  const [newName, setNewName] = useState("");
+
+  async function load() {
+    const { data: ts } = await supabase.from("tournaments").select("id, title, game").order("start_date", { ascending: false });
+    setTournaments(ts ?? []);
+    if (ts && ts.length && !selectedTournament) setSelectedTournament(ts[0].id);
+
+    const { data: tms } = await supabase.from("tournament_teams").select("*").order("created_at");
+    setTeams(tms ?? []);
+
+    const { data: regs } = await supabase
+      .from("tournament_registrations")
+      .select("id, real_name, in_game_id, team_id, user_id, status")
+      .eq("status", "approved");
+    if (regs && regs.length) {
+      const userIds = Array.from(new Set(regs.map((r: any) => r.user_id)));
+      const { data: profs } = await supabase.from("profiles").select("user_id, display_name").in("user_id", userIds);
+      const profMap: Record<string, any> = {};
+      (profs ?? []).forEach((p: any) => { profMap[p.user_id] = p; });
+      const grouped: Record<string, any[]> = {};
+      (regs ?? []).forEach((r: any) => {
+        if (!r.team_id) return;
+        if (!grouped[r.team_id]) grouped[r.team_id] = [];
+        grouped[r.team_id].push({ ...r, profile: profMap[r.user_id] });
+      });
+      setMembers(grouped);
+    } else setMembers({});
+  }
+  useEffect(() => { load(); }, []);
+
+  async function addTeam() {
+    if (!newName.trim() || !selectedTournament) return toast.error("اختر بطولة واسم الفريق");
+    const { error } = await supabase.from("tournament_teams").insert({
+      name: newName.trim().slice(0, 80),
+      tournament_id: selectedTournament,
+    });
+    if (error) toast.error(error.message); else { toast.success("أُضيف الفريق"); setNewName(""); load(); }
+  }
+
+  async function removeTeam(id: string) {
+    if (!confirm("حذف الفريق؟ سيتم فك ارتباط أعضائه.")) return;
+    const { error } = await supabase.from("tournament_teams").delete().eq("id", id);
+    if (error) toast.error(error.message); else { toast.success("حُذف"); load(); }
+  }
+
+  async function renameTeam(id: string, name: string) {
+    const { error } = await supabase.from("tournament_teams").update({ name: name.trim().slice(0, 80) }).eq("id", id);
+    if (error) toast.error(error.message); else { toast.success("تم"); load(); }
+  }
+
+  const visibleTeams = teams.filter((t) => t.tournament_id === selectedTournament);
+
+  return (
+    <TableShell title="إدارة الفرق" count={visibleTeams.length} onReload={load}>
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-2 items-end">
+          <div className="flex-1 min-w-[200px]">
+            <Label className="text-xs">البطولة</Label>
+            <Select value={selectedTournament} onValueChange={setSelectedTournament}>
+              <SelectTrigger><SelectValue placeholder="اختر بطولة" /></SelectTrigger>
+              <SelectContent>
+                {tournaments.map((t) => <SelectItem key={t.id} value={t.id}>{t.title} — {t.game}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex-1 min-w-[200px]">
+            <Label className="text-xs">اسم فريق جديد</Label>
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="مثلاً: Team Alpha" maxLength={80} />
+          </div>
+          <Button onClick={addTeam} className="bg-accent text-accent-foreground"><Plus className="w-4 h-4 ml-1" />إنشاء</Button>
+        </div>
+
+        {visibleTeams.length === 0 && <p className="text-center py-8 text-muted-foreground">لا توجد فرق لهذه البطولة بعد</p>}
+
+        {visibleTeams.map((tm) => (
+          <div key={tm.id} className="border border-border rounded-xl p-4 bg-card">
+            <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+              <Input
+                defaultValue={tm.name}
+                onBlur={(e) => { if (e.target.value !== tm.name) renameTeam(tm.id, e.target.value); }}
+                className="font-black text-lg max-w-xs"
+              />
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">{(members[tm.id] ?? []).length} عضو</Badge>
+                <Button size="icon" variant="ghost" onClick={() => removeTeam(tm.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              {(members[tm.id] ?? []).length === 0 && <p className="text-xs text-muted-foreground">لا أعضاء — عيّن من تبويب التسجيلات</p>}
+              {(members[tm.id] ?? []).map((m) => (
+                <div key={m.id} className="text-sm flex items-center gap-2 bg-muted/30 rounded-lg p-2">
+                  <span className="font-bold">{m.real_name ?? m.profile?.display_name ?? "—"}</span>
+                  {m.in_game_id && <span className="text-xs text-muted-foreground">• {m.in_game_id}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </TableShell>
   );
 }
