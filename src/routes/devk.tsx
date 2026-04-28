@@ -1,16 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useSiteDataDraft, defaultData, normalizeDigits, type Game, type ServerStat, type ServerPerk, type CustomSection, type Block, type Streamer, type LeaderboardEntry, type HallOfFameEntry } from "@/lib/khayal-store";
+import { useSiteDataDraft, defaultData, normalizeDigits, type Game, type ServerStat, type ServerPerk, type CustomSection, type Block, type CardItem, type SocialItem, type Streamer, type LeaderboardEntry, type HallOfFameEntry } from "@/lib/khayal-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast, Toaster } from "sonner";
-import { Trash2, Plus, ArrowUp, ArrowDown, Settings, Gamepad2, BarChart3, Sparkles, Video, Trophy, Crown, Layers, Users, Coins, ShoppingBag, Package, Save, RotateCcw } from "lucide-react";
+import { Trash2, Plus, Settings, Gamepad2, BarChart3, Sparkles, Video, Trophy, Crown, Layers, Users, Coins, ShoppingBag, Package, Save, RotateCcw, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/ImageUpload";
 import { MembersAdmin, PointsAdmin, TournamentsAdmin, ShopAdmin, OrdersAdmin, RegistrationsAdmin, TeamsAdmin } from "@/routes/admin";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 export const Route = createFileRoute("/devk")({
   head: () => ({ meta: [{ title: "Dev Panel" }, { name: "robots", content: "noindex" }] }),
