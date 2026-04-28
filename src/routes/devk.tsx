@@ -104,13 +104,8 @@ function Panel() {
   };
   const updateSection = (id: string, patch: Partial<CustomSection>) => update({ customSections: data.customSections.map((s) => s.id === id ? { ...s, ...patch } : s) });
   const deleteSection = (id: string) => update({ customSections: data.customSections.filter((s) => s.id !== id) });
-  const moveSection = (id: string, dir: -1 | 1) => {
-    const arr = [...data.customSections];
-    const i = arr.findIndex((s) => s.id === id);
-    const j = i + dir;
-    if (i < 0 || j < 0 || j >= arr.length) return;
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-    update({ customSections: arr });
+  const reorderSections = (oldIndex: number, newIndex: number) => {
+    update({ customSections: arrayMove(data.customSections, oldIndex, newIndex) });
   };
 
   const addBlock = (sectionId: string, type: Block["type"]) => {
