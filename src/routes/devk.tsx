@@ -132,15 +132,10 @@ function Panel() {
     if (!sec) return;
     updateSection(sectionId, { blocks: sec.blocks.filter((b) => b.id !== blockId) });
   };
-  const moveBlock = (sectionId: string, blockId: string, dir: -1 | 1) => {
+  const reorderBlocks = (sectionId: string, oldIndex: number, newIndex: number) => {
     const sec = data.customSections.find((s) => s.id === sectionId);
     if (!sec) return;
-    const arr = [...sec.blocks];
-    const i = arr.findIndex((b) => b.id === blockId);
-    const j = i + dir;
-    if (i < 0 || j < 0 || j >= arr.length) return;
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-    updateSection(sectionId, { blocks: arr });
+    updateSection(sectionId, { blocks: arrayMove(sec.blocks, oldIndex, newIndex) });
   };
 
   return (
