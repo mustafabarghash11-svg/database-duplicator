@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import game1 from "@/assets/game-1.jpg";
 import game2 from "@/assets/game-2.jpg";
 import game3 from "@/assets/game-3.jpg";
@@ -97,6 +98,64 @@ export type SiteData = {
 };
 
 const STORAGE_KEY = "khayal-site-data-v3";
+const SITE_ROW_ID = "main";
+
+// In-memory cache shared across hook instances (avoids refetch on every mount)
+let _cache: SiteData | null = null;
+const _listeners = new Set<(d: SiteData) => void>();
+let _realtimeStarted = false;
+
+function mergeWithDefaults(parsed: Partial<SiteData> | null | undefined): SiteData {
+  const p = (parsed ?? {}) as Partial<SiteData>;
+  return {
+    ...defaultData,
+    ...p,
+    customSections: p.customSections ?? [],
+    serverStats: p.serverStats ?? defaultData.serverStats,
+    serverPerks: p.serverPerks ?? defaultData.serverPerks,
+    streamers: p.streamers ?? [],
+    upcomingEvent: p.upcomingEvent ?? null,
+    leaderboard: p.leaderboard ?? [],
+    hallOfFame: p.hallOfFame ?? [],
+  };
+}
+
+function notify(d: SiteData) {
+  _cache = d;
+  _listeners.forEach((fn) => fn(d));
+  if (typeof window !== "undefined") {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch { /* ignore */ }
+  }
+}
+
+async function fetchRemote(): Promise<SiteData> {
+  const { data, error } = await (supabase as any)
+    .from("site_data")
+    .select("data")
+    .eq("id", SITE_ROW_ID)
+    .maybeSingle();
+  if (error) {
+    console.warn("[site_data] fetch failed:", error.message);
+    return mergeWithDefaults(null);
+  }
+  return mergeWithDefaults((data?.data as Partial<SiteData>) ?? null);
+}
+
+function startRealtime() {
+  if (_realtimeStarted || typeof window === "undefined") return;
+  _realtimeStarted = true;
+  supabase
+    .channel("site_data-changes")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "site_data", filter: `id=eq.${SITE_ROW_ID}` },
+      (payload) => {
+        const newRow = (payload.new as { data?: Partial<SiteData> } | null) ?? null;
+        if (newRow?.data) notify(mergeWithDefaults(newRow.data));
+      }
+    )
+    .subscribe();
+}
 
 export const defaultData: SiteData = {
   siteName: "Khayal Community",
@@ -134,46 +193,47 @@ export const defaultData: SiteData = {
   customSections: [],
 };
 
+// Synchronous read (returns cached or last-known localStorage snapshot for instant render)
 export function loadData(): SiteData {
+  if (_cache) return _cache;
   if (typeof window === "undefined") return defaultData;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultData;
-    const parsed = JSON.parse(raw);
-    return {
-      ...defaultData,
-      ...parsed,
-      customSections: parsed.customSections ?? [],
-      serverStats: parsed.serverStats ?? defaultData.serverStats,
-      serverPerks: parsed.serverPerks ?? defaultData.serverPerks,
-      streamers: parsed.streamers ?? [],
-      upcomingEvent: parsed.upcomingEvent ?? null,
-      leaderboard: parsed.leaderboard ?? [],
-      hallOfFame: parsed.hallOfFame ?? [],
-    };
+    return mergeWithDefaults(JSON.parse(raw));
   } catch {
     return defaultData;
   }
 }
 
-export function saveData(data: SiteData) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  window.dispatchEvent(new Event("khayal-data-updated"));
+export async function saveData(data: SiteData) {
+  notify(data); // optimistic update for current client
+  const { error } = await (supabase as any)
+    .from("site_data")
+    .upsert({ id: SITE_ROW_ID, data, updated_at: new Date().toISOString() });
+  if (error) {
+    console.error("[site_data] save failed:", error.message);
+    throw error;
+  }
 }
 
 export function useSiteData() {
-  const [data, setData] = useState<SiteData>(defaultData);
+  const [data, setData] = useState<SiteData>(() => loadData());
+
   useEffect(() => {
-    setData(loadData());
-    const handler = () => setData(loadData());
-    window.addEventListener("khayal-data-updated", handler);
-    window.addEventListener("storage", handler);
-    return () => {
-      window.removeEventListener("khayal-data-updated", handler);
-      window.removeEventListener("storage", handler);
-    };
+    startRealtime();
+    // Always fetch fresh from server on mount
+    fetchRemote().then(notify);
+
+    const listener = (d: SiteData) => setData(d);
+    _listeners.add(listener);
+    return () => { _listeners.delete(listener); };
   }, []);
-  return [data, (d: SiteData) => { saveData(d); setData(d); }] as const;
+
+  return [
+    data,
+    (d: SiteData) => { void saveData(d); },
+  ] as const;
 }
 
 // Convert Arabic-Indic digits to ASCII
