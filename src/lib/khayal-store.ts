@@ -222,7 +222,6 @@ export function useSiteData() {
 
   useEffect(() => {
     startRealtime();
-    // Always fetch fresh from server on mount
     fetchRemote().then(notify);
 
     const listener = (d: SiteData) => setData(d);
@@ -230,10 +229,48 @@ export function useSiteData() {
     return () => { _listeners.delete(listener); };
   }, []);
 
+  // Auto-save (used in homepage / public views, not the editor)
   return [
     data,
     (d: SiteData) => { void saveData(d); },
   ] as const;
+}
+
+// Editor hook: keeps a local draft, exposes dirty + save/reset.
+export function useSiteDataDraft() {
+  const [serverData, setServerData] = useState<SiteData>(() => loadData());
+  const [draft, setDraft] = useState<SiteData>(() => loadData());
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    startRealtime();
+    fetchRemote().then((d) => {
+      notify(d);
+      setDraft(d);
+    });
+
+    const listener = (d: SiteData) => {
+      setServerData(d);
+    };
+    _listeners.add(listener);
+    return () => { _listeners.delete(listener); };
+  }, []);
+
+  const dirty = JSON.stringify(draft) !== JSON.stringify(serverData);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await saveData(draft);
+      setServerData(draft);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const reset = () => setDraft(serverData);
+
+  return { data: draft, setData: setDraft, save, reset, dirty, saving };
 }
 
 // Convert Arabic-Indic digits to ASCII

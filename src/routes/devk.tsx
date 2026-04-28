@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useSiteData, defaultData, normalizeDigits, type Game, type ServerStat, type ServerPerk, type CustomSection, type Block, type Streamer, type LeaderboardEntry, type HallOfFameEntry } from "@/lib/khayal-store";
+import { useSiteDataDraft, defaultData, normalizeDigits, type Game, type ServerStat, type ServerPerk, type CustomSection, type Block, type Streamer, type LeaderboardEntry, type HallOfFameEntry } from "@/lib/khayal-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast, Toaster } from "sonner";
-import { Trash2, Plus, ArrowUp, ArrowDown, Settings, Gamepad2, BarChart3, Sparkles, Video, Trophy, Crown, Layers, Users, Coins, ShoppingBag, Package } from "lucide-react";
+import { Trash2, Plus, ArrowUp, ArrowDown, Settings, Gamepad2, BarChart3, Sparkles, Video, Trophy, Crown, Layers, Users, Coins, ShoppingBag, Package, Save, RotateCcw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/ImageUpload";
 import { MembersAdmin, PointsAdmin, TournamentsAdmin, ShopAdmin, OrdersAdmin, RegistrationsAdmin } from "@/routes/admin";
@@ -61,7 +61,7 @@ function DevPanel() {
 }
 
 function Panel() {
-  const [data, setData] = useSiteData();
+  const { data, setData, save, reset, dirty, saving } = useSiteDataDraft();
   const update = (patch: Partial<typeof data>) => setData({ ...data, ...patch });
 
   // Games
@@ -147,9 +147,36 @@ function Panel() {
           <h1 className="text-2xl md:text-3xl font-black flex items-center gap-2">
             <Settings className="w-7 h-7 text-accent" />
             لوحة المطور
+            {dirty && <span className="text-xs font-normal px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">تعديلات غير محفوظة</span>}
           </h1>
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => { if (confirm("استرجاع الإعدادات الافتراضية؟")) { setData(defaultData); toast.success("تم"); } }}>استرجاع</Button>
+            <Button
+              size="sm"
+              disabled={!dirty || saving}
+              onClick={async () => {
+                try {
+                  await save();
+                  toast.success("تم الحفظ ونشره للجميع");
+                } catch (e: unknown) {
+                  const msg = e instanceof Error ? e.message : "فشل الحفظ";
+                  toast.error(msg);
+                }
+              }}
+              className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold gap-1"
+            >
+              <Save className="w-4 h-4" />
+              {saving ? "جاري الحفظ..." : "حفظ التغييرات"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!dirty || saving}
+              onClick={() => { if (confirm("تجاهل التعديلات غير المحفوظة؟")) { reset(); toast.info("تم التراجع"); } }}
+              className="gap-1"
+            >
+              <RotateCcw className="w-4 h-4" />تراجع
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => { if (confirm("استرجاع الإعدادات الافتراضية؟ (لن يُحفظ تلقائياً، اضغط حفظ بعدها)")) { setData(defaultData); toast.success("تم — اضغط حفظ للنشر"); } }}>استرجاع افتراضي</Button>
             <Button asChild variant="outline" size="sm"><a href="/">عرض الموقع</a></Button>
           </div>
         </div>
