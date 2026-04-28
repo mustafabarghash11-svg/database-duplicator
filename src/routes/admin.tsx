@@ -43,6 +43,7 @@ function AdminPage() {
             <TabsTrigger value="points"><Sparkles className="w-4 h-4 ml-1" /> نقاط و XP</TabsTrigger>
             <TabsTrigger value="tournaments"><Trophy className="w-4 h-4 ml-1" /> البطولات</TabsTrigger>
             <TabsTrigger value="registrations"><Users className="w-4 h-4 ml-1" /> التسجيلات</TabsTrigger>
+            <TabsTrigger value="teams"><UsersRound className="w-4 h-4 ml-1" /> الفرق</TabsTrigger>
             <TabsTrigger value="shop"><ShoppingBag className="w-4 h-4 ml-1" /> المتجر</TabsTrigger>
             <TabsTrigger value="orders"><Package className="w-4 h-4 ml-1" /> الطلبات</TabsTrigger>
           </TabsList>
@@ -50,6 +51,7 @@ function AdminPage() {
           <TabsContent value="points"><PointsAdmin /></TabsContent>
           <TabsContent value="tournaments"><TournamentsAdmin /></TabsContent>
           <TabsContent value="registrations"><RegistrationsAdmin /></TabsContent>
+          <TabsContent value="teams"><TeamsAdmin /></TabsContent>
           <TabsContent value="shop"><ShopAdmin /></TabsContent>
           <TabsContent value="orders"><OrdersAdmin /></TabsContent>
         </Tabs>
