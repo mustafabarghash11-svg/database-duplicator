@@ -286,14 +286,24 @@ function Panel() {
                     <Input placeholder="المنصة (Twitch, YouTube, Kick, TikTok...)" value={s.platform} onChange={(e) => updateStreamer(s.id, { platform: e.target.value })} />
                   </div>
                   <Input placeholder="رابط القناة" value={s.link} onChange={(e) => updateStreamer(s.id, { link: e.target.value })} />
+                  <Input
+                    placeholder="YouTube Channel ID (مثل UCxxxx... — لتفعيل اللايف/الفيديو/الشورت تلقائياً)"
+                    value={s.youtubeChannelId ?? ""}
+                    onChange={(e) => updateStreamer(s.id, { youtubeChannelId: e.target.value.trim() })}
+                  />
                   <ImageUpload value={s.image} onChange={(v) => updateStreamer(s.id, { image: v })} placeholder="صورة الستريمر" />
                   <div className="flex items-center justify-between rounded-lg bg-background/40 p-3">
                     <Label className="flex items-center gap-2">
                       <span className={`h-2.5 w-2.5 rounded-full ${s.isLive ? "bg-red-500 animate-pulse" : "bg-muted-foreground"}`} />
-                      {s.isLive ? "حالياً LIVE 🔴" : "غير متصل"}
+                      {s.isLive ? "حالياً LIVE 🔴 (يدوي)" : "غير متصل (يدوي)"}
                     </Label>
                     <Switch checked={s.isLive} onCheckedChange={(v) => updateStreamer(s.id, { isLive: v })} />
                   </div>
+                  {s.youtubeChannelId && (
+                    <p className="text-xs text-muted-foreground">
+                      ✨ مفعّل الفحص التلقائي لليوتيوب — الحلقة الحمراء = LIVE، الصفراء = شورت جديد، الخضراء = فيديو جديد (آخر 48 ساعة)
+                    </p>
+                  )}
                   <Button variant="destructive" size="sm" onClick={() => deleteStreamer(s.id)}><Trash2 className="w-4 h-4 ml-1" />حذف</Button>
                 </div>
               ))}
