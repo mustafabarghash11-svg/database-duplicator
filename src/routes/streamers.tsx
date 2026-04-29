@@ -31,35 +31,7 @@ function StreamersPage() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {data.streamers.map((s) => (
-              <a
-                key={s.id}
-                href={safeHref(s.link)}
-                target="_blank"
-                rel="noreferrer"
-                className="group rounded-2xl bg-card border border-border overflow-hidden hover:border-accent transition-all hover:-translate-y-1 hover:shadow-[0_20px_50px_-15px_oklch(0.65_0.18_215/0.4)]"
-              >
-                <div className="relative aspect-video bg-muted overflow-hidden">
-                  {s.image ? (
-                    <img src={s.image} alt={s.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-5xl">🎮</div>
-                  )}
-                  {s.isLive ? (
-                    <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-red-600 text-white text-xs font-black px-3 py-1 rounded-full shadow-lg animate-pulse">
-                      <span className="h-2 w-2 rounded-full bg-white" />
-                      LIVE
-                    </div>
-                  ) : (
-                    <div className="absolute top-3 right-3 bg-black/70 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      Offline
-                    </div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-black text-lg">{s.name}</h3>
-                  {s.platform && <p className="text-xs text-muted-foreground mt-1">{s.platform}</p>}
-                </div>
-              </a>
+              <StreamerCard key={s.id} streamer={s} />
             ))}
           </div>
         )}
