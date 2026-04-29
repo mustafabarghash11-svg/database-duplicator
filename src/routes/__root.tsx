@@ -1,5 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { UISounds } from "@/components/UISounds";
+import { SoundToggle } from "@/components/SoundToggle";
 
 import appCss from "../styles.css?url";
 
