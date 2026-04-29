@@ -130,9 +130,13 @@ export function CustomSectionView({ section }: { section: CustomSection }) {
                     href={safeHref(s.link)}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-2 px-5 py-3 rounded-full bg-card border border-border hover:border-accent hover:-translate-y-1 transition-all font-bold"
+                    className="flex items-center gap-3 px-5 py-3 rounded-full bg-card border border-border hover:border-accent hover:-translate-y-1 transition-all font-bold"
                   >
-                    <span className="text-xl">{socialIcon(s.platform)}</span>
+                    {s.image ? (
+                      <img src={s.image} alt={s.label || s.platform} loading="lazy" className="w-8 h-8 rounded-full object-cover border border-border" />
+                    ) : (
+                      <span className="text-xl">{socialIcon(s.platform)}</span>
+                    )}
                     <span>{s.label || s.platform}</span>
                   </a>
                 ))}
