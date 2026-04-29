@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useSiteData, safeHref } from "@/lib/khayal-store";
+import { useSiteData } from "@/lib/khayal-store";
 import { SideNav } from "@/components/SideNav";
+import { StreamerCard } from "@/components/StreamerCard";
 
 export const Route = createFileRoute("/streamers")({
   head: () => ({
