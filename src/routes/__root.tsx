@@ -75,6 +75,7 @@ function RootComponent() {
     <>
       <UISounds />
       <Outlet />
+      <SoundToggle />
     </>
   );
 }
