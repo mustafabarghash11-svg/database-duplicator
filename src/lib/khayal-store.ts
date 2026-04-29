@@ -76,6 +76,7 @@ export type Streamer = {
   platform: string; // Twitch, YouTube, Kick, TikTok...
   link: string;
   isLive: boolean;
+  youtubeChannelId?: string; // For automatic YouTube status detection
 };
 
 export type UpcomingEvent = {
