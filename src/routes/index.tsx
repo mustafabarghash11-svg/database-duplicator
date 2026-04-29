@@ -7,6 +7,7 @@ import { VisitorCounter } from "@/components/VisitorCounter";
 import { DiscordLiveCount } from "@/components/DiscordLiveCount";
 import { EventCountdown } from "@/components/EventCountdown";
 import { CustomSectionView } from "@/components/CustomSectionView";
+import { StreamerCard } from "@/components/StreamerCard";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Route = createFileRoute("/")({
