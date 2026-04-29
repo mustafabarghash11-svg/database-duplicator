@@ -676,13 +676,19 @@ function BlockEditor({ block, onChange }: { block: Block; onChange: (patch: Part
     } as Partial<Block>);
     const removeItem = (id: string) => onChange({ items: items.filter((s) => s.id !== id) } as Partial<Block>);
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         {items.map((s) => (
-          <div key={s.id} className="grid grid-cols-[120px_1fr_1fr_auto] gap-2">
-            <Input value={s.platform} onChange={(e) => setItem(s.id, { platform: e.target.value })} placeholder="discord/twitter/..." />
-            <Input value={s.label} onChange={(e) => setItem(s.id, { label: e.target.value })} placeholder="اسم العرض" />
-            <Input value={s.link} onChange={(e) => setItem(s.id, { link: e.target.value })} placeholder="https://" />
-            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeItem(s.id)}><Trash2 className="w-3 h-3" /></Button>
+          <div key={s.id} className="border border-border rounded-lg p-3 space-y-2">
+            <div className="grid grid-cols-[120px_1fr_1fr_auto] gap-2">
+              <Input value={s.platform} onChange={(e) => setItem(s.id, { platform: e.target.value })} placeholder="discord/twitter/..." />
+              <Input value={s.label} onChange={(e) => setItem(s.id, { label: e.target.value })} placeholder="اسم العرض" />
+              <Input value={s.link} onChange={(e) => setItem(s.id, { link: e.target.value })} placeholder="https://" />
+              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeItem(s.id)}><Trash2 className="w-3 h-3" /></Button>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">صورة القناة (اختياري)</Label>
+              <ImageUpload value={s.image || ""} onChange={(url) => setItem(s.id, { image: url })} />
+            </div>
           </div>
         ))}
         <Button size="sm" variant="outline" onClick={addItem}><Plus className="w-3 h-3 ml-1" />حساب</Button>

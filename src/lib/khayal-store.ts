@@ -34,6 +34,7 @@ export type SocialItem = {
   platform: string; // twitter, instagram, tiktok, youtube, twitch, discord, facebook, custom
   label: string;
   link: string;
+  image?: string; // optional channel/account image
 };
 
 export type Block =
