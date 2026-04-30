@@ -241,6 +241,10 @@ export async function saveData(data: SiteData) {
   }
 }
 
+export function applySavedData(data: SiteData) {
+  notify(data);
+}
+
 export function useSiteData() {
   const [data, setData] = useState<SiteData>(() => loadData());
 
@@ -253,10 +257,10 @@ export function useSiteData() {
     return () => { _listeners.delete(listener); };
   }, []);
 
-  // Auto-save (used in homepage / public views, not the editor)
+  // Public views only read data; saving is handled explicitly from the dev panel.
   return [
     data,
-    (d: SiteData) => { void saveData(d); },
+    (d: SiteData) => notify(d),
   ] as const;
 }
 
