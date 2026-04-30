@@ -65,7 +65,9 @@ function DevPanel() {
 }
 
 function Panel({ pin }: { pin: string }) {
-  const { data, setData, save, reset, dirty, saving } = useSiteDataDraft();
+  const { data, setData, reset, dirty, saving } = useSiteDataDraft();
+  const [serverSaving, setServerSaving] = useState(false);
+  const isSaving = saving || serverSaving;
   const update = (patch: Partial<typeof data>) => setData({ ...data, ...patch });
 
   // Games
@@ -151,27 +153,29 @@ function Panel({ pin }: { pin: string }) {
           <div className="flex gap-2 flex-wrap">
             <Button
               size="sm"
-              disabled={!dirty || saving}
+              disabled={!dirty || isSaving}
               onClick={async () => {
+                setServerSaving(true);
                 try {
                   const saved = await saveSiteData({ data: { pin, data } });
                   applySavedData(saved);
-                  await save();
                   toast.success("تم الحفظ ونشره للجميع");
                 } catch (e: unknown) {
                   const msg = e instanceof Error ? e.message : "فشل الحفظ";
                   toast.error(msg);
+                } finally {
+                  setServerSaving(false);
                 }
               }}
               className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold gap-1"
             >
               <Save className="w-4 h-4" />
-              {saving ? "جاري الحفظ..." : "حفظ التغييرات"}
+              {isSaving ? "جاري الحفظ..." : "حفظ التغييرات"}
             </Button>
             <Button
               variant="outline"
               size="sm"
-              disabled={!dirty || saving}
+              disabled={!dirty || isSaving}
               onClick={() => { if (confirm("تجاهل التعديلات غير المحفوظة؟")) { reset(); toast.info("تم التراجع"); } }}
               className="gap-1"
             >
