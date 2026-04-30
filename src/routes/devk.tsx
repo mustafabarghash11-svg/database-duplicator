@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useSiteDataDraft, defaultData, normalizeDigits, type Game, type ServerStat, type ServerPerk, type CustomSection, type Block, type CardItem, type SocialItem, type Streamer, type LeaderboardEntry, type HallOfFameEntry } from "@/lib/khayal-store";
+import { useSiteDataDraft, defaultData, normalizeDigits, applySavedData, type Game, type ServerStat, type ServerPerk, type CustomSection, type Block, type CardItem, type SocialItem, type Streamer, type LeaderboardEntry, type HallOfFameEntry } from "@/lib/khayal-store";
+import { saveSiteData } from "@/server/site-data.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,10 +61,10 @@ function DevPanel() {
     );
   }
 
-  return <Panel />;
+  return <Panel pin={normalizeDigits(code).trim()} />;
 }
 
-function Panel() {
+function Panel({ pin }: { pin: string }) {
   const { data, setData, save, reset, dirty, saving } = useSiteDataDraft();
   const update = (patch: Partial<typeof data>) => setData({ ...data, ...patch });
 
@@ -153,6 +154,8 @@ function Panel() {
               disabled={!dirty || saving}
               onClick={async () => {
                 try {
+                  const saved = await saveSiteData({ data: { pin, data } });
+                  applySavedData(saved);
                   await save();
                   toast.success("تم الحفظ ونشره للجميع");
                 } catch (e: unknown) {
