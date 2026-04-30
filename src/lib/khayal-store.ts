@@ -152,7 +152,7 @@ function notify(d: SiteData) {
   }
 }
 
-async function fetchRemote(): Promise<SiteData> {
+async function fetchRemote(): Promise<SiteData | null> {
   const { data, error } = await supabase
     .from("site_data")
     .select("data")
@@ -160,9 +160,10 @@ async function fetchRemote(): Promise<SiteData> {
     .maybeSingle();
   if (error) {
     console.warn("[site_data] fetch failed:", error.message);
-    return mergeWithDefaults(null);
+    return null;
   }
-  return mergeWithDefaults((data?.data as Partial<SiteData>) ?? null);
+  if (!data?.data) return null;
+  return mergeWithDefaults(data.data as Partial<SiteData>);
 }
 
 function startRealtime() {
@@ -250,7 +251,7 @@ export function useSiteData() {
 
   useEffect(() => {
     startRealtime();
-    fetchRemote().then(notify);
+    fetchRemote().then((d) => { if (d) notify(d); });
 
     const listener = (d: SiteData) => setData(d);
     _listeners.add(listener);
@@ -273,6 +274,7 @@ export function useSiteDataDraft() {
   useEffect(() => {
     startRealtime();
     fetchRemote().then((d) => {
+      if (!d) return;
       notify(d);
       setDraft(d);
     });
