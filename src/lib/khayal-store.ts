@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import game1 from "@/assets/game-1.jpg";
 import game2 from "@/assets/game-2.jpg";
@@ -270,13 +270,15 @@ export function useSiteDataDraft() {
   const [serverData, setServerData] = useState<SiteData>(() => loadData());
   const [draft, setDraft] = useState<SiteData>(() => loadData());
   const [saving, setSaving] = useState(false);
+  const touchedRef = useRef(false);
 
   useEffect(() => {
     startRealtime();
     fetchRemote().then((d) => {
       if (!d) return;
       notify(d);
-      setDraft(d);
+      setServerData(d);
+      if (!touchedRef.current) setDraft(d);
     });
 
     const listener = (d: SiteData) => {
@@ -293,14 +295,23 @@ export function useSiteDataDraft() {
     try {
       await saveData(draft);
       setServerData(draft);
+      touchedRef.current = false;
     } finally {
       setSaving(false);
     }
   };
 
-  const reset = () => setDraft(serverData);
+  const setEditorDraft: typeof setDraft = (value) => {
+    touchedRef.current = true;
+    setDraft(value);
+  };
 
-  return { data: draft, setData: setDraft, save, reset, dirty, saving };
+  const reset = () => {
+    touchedRef.current = false;
+    setDraft(serverData);
+  };
+
+  return { data: draft, setData: setEditorDraft, save, reset, dirty, saving };
 }
 
 // Convert Arabic-Indic digits to ASCII
