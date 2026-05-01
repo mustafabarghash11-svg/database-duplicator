@@ -13,6 +13,13 @@ export type Profile = {
   points: number;
   xp: number;
   level: number;
+  tournaments_won: number;
+  tournaments_played: number;
+  best_rank: number | null;
+  team_name: string | null;
+  custom_title: string | null;
+  dev_notes: string | null;
+  username: string | null;
 };
 
 export function useAuth() {
