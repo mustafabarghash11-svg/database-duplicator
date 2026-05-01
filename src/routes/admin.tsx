@@ -748,6 +748,13 @@ export function MembersAdmin() {
       display_name: p.display_name ?? "", discord_username: p.discord_username ?? "",
       favorite_game: p.favorite_game ?? "", bio: p.bio ?? "", avatar_url: p.avatar_url ?? "",
       points: p.points ?? 0, xp: p.xp ?? 0, level: p.level ?? 1,
+      tournaments_won: p.tournaments_won ?? 0,
+      tournaments_played: p.tournaments_played ?? 0,
+      best_rank: p.best_rank ?? "",
+      team_name: p.team_name ?? "",
+      custom_title: p.custom_title ?? "",
+      dev_notes: p.dev_notes ?? "",
+      username: p.username ?? "",
     });
   }
   async function saveEdit() {
@@ -759,8 +766,19 @@ export function MembersAdmin() {
       points: Math.max(0, Number(editForm.points) || 0),
       xp: Math.max(0, Number(editForm.xp) || 0),
       level: Math.max(1, Number(editForm.level) || 1),
+      tournaments_won: Math.max(0, Number(editForm.tournaments_won) || 0),
+      tournaments_played: Math.max(0, Number(editForm.tournaments_played) || 0),
+      best_rank: editForm.best_rank === "" || editForm.best_rank == null ? null : Math.max(1, Number(editForm.best_rank)),
+      team_name: editForm.team_name || null,
+      custom_title: editForm.custom_title || null,
+      dev_notes: editForm.dev_notes || null,
+      username: editForm.username ? String(editForm.username).trim().toLowerCase().replace(/[^a-z0-9_-]/g, "") || null : null,
     }).eq("user_id", editingId);
     if (error) toast.error(error.message); else { toast.success("تم الحفظ"); setEditingId(null); load(); }
+  }
+  async function quickWinBump(userId: string, delta: number) {
+    const { error } = await supabase.rpc("admin_increment_wins", { _user_id: userId, _delta: delta });
+    if (error) toast.error(error.message); else { toast.success(delta > 0 ? "+1 فوز" : "-1 فوز"); load(); }
   }
   async function changeRole(userId: string, role: string) {
     await supabase.from("user_roles").delete().eq("user_id", userId);
