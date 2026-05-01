@@ -133,42 +133,6 @@ function AccountPage() {
             </div>
           </div>
 
-          {/* Tournament stats */}
-          <div className="grid grid-cols-3 gap-3 mb-5">
-            <div className="rounded-xl bg-background/40 p-3 text-center">
-              <div className="text-2xl mb-1">🏆</div>
-              <div className="text-2xl font-black text-accent tabular-nums">{profile.tournaments_won ?? 0}</div>
-              <div className="text-xs text-muted-foreground">بطولات فاز فيها</div>
-            </div>
-            <div className="rounded-xl bg-background/40 p-3 text-center">
-              <div className="text-2xl mb-1">🎮</div>
-              <div className="text-2xl font-black text-accent tabular-nums">{profile.tournaments_played ?? 0}</div>
-              <div className="text-xs text-muted-foreground">بطولات شارك فيها</div>
-            </div>
-            <div className="rounded-xl bg-background/40 p-3 text-center">
-              <div className="text-2xl mb-1">🥇</div>
-              <div className="text-2xl font-black text-accent tabular-nums">{profile.best_rank ?? "—"}</div>
-              <div className="text-xs text-muted-foreground">أفضل مركز</div>
-            </div>
-          </div>
-
-          {(profile.custom_title || profile.team_name) && (
-            <div className="flex flex-wrap gap-2 mb-5">
-              {profile.custom_title && (
-                <span className="px-3 py-1 rounded-full bg-accent/20 border border-accent/40 text-accent text-sm font-bold">⭐ {profile.custom_title}</span>
-              )}
-              {profile.team_name && (
-                <span className="px-3 py-1 rounded-full bg-primary/20 border border-primary/40 text-sm font-bold">⚔️ {profile.team_name}</span>
-              )}
-            </div>
-          )}
-
-          {profile.username && (
-            <p className="text-xs text-muted-foreground mb-3">
-              صفحتك العامة: <a href={`/u/${profile.username}`} className="text-accent hover:underline">/u/{profile.username}</a>
-            </p>
-          )}
-
           <div>
             <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
               <span>تقدم المستوى {profile.level}</span>

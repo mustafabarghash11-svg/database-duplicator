@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import game1 from "@/assets/game-1.jpg";
 import game2 from "@/assets/game-2.jpg";
@@ -152,7 +152,7 @@ function notify(d: SiteData) {
   }
 }
 
-async function fetchRemote(): Promise<SiteData | null> {
+async function fetchRemote(): Promise<SiteData> {
   const { data, error } = await supabase
     .from("site_data")
     .select("data")
@@ -160,10 +160,9 @@ async function fetchRemote(): Promise<SiteData | null> {
     .maybeSingle();
   if (error) {
     console.warn("[site_data] fetch failed:", error.message);
-    return null;
+    return mergeWithDefaults(null);
   }
-  if (!data?.data) return null;
-  return mergeWithDefaults(data.data as Partial<SiteData>);
+  return mergeWithDefaults((data?.data as Partial<SiteData>) ?? null);
 }
 
 function startRealtime() {
@@ -242,26 +241,22 @@ export async function saveData(data: SiteData) {
   }
 }
 
-export function applySavedData(data: SiteData) {
-  notify(data);
-}
-
 export function useSiteData() {
   const [data, setData] = useState<SiteData>(() => loadData());
 
   useEffect(() => {
     startRealtime();
-    fetchRemote().then((d) => { if (d) notify(d); });
+    fetchRemote().then(notify);
 
     const listener = (d: SiteData) => setData(d);
     _listeners.add(listener);
     return () => { _listeners.delete(listener); };
   }, []);
 
-  // Public views only read data; saving is handled explicitly from the dev panel.
+  // Auto-save (used in homepage / public views, not the editor)
   return [
     data,
-    (d: SiteData) => notify(d),
+    (d: SiteData) => { void saveData(d); },
   ] as const;
 }
 
@@ -270,15 +265,12 @@ export function useSiteDataDraft() {
   const [serverData, setServerData] = useState<SiteData>(() => loadData());
   const [draft, setDraft] = useState<SiteData>(() => loadData());
   const [saving, setSaving] = useState(false);
-  const touchedRef = useRef(false);
 
   useEffect(() => {
     startRealtime();
     fetchRemote().then((d) => {
-      if (!d) return;
       notify(d);
-      setServerData(d);
-      if (!touchedRef.current) setDraft(d);
+      setDraft(d);
     });
 
     const listener = (d: SiteData) => {
@@ -295,23 +287,14 @@ export function useSiteDataDraft() {
     try {
       await saveData(draft);
       setServerData(draft);
-      touchedRef.current = false;
     } finally {
       setSaving(false);
     }
   };
 
-  const setEditorDraft: typeof setDraft = (value) => {
-    touchedRef.current = true;
-    setDraft(value);
-  };
+  const reset = () => setDraft(serverData);
 
-  const reset = () => {
-    touchedRef.current = false;
-    setDraft(serverData);
-  };
-
-  return { data: draft, setData: setEditorDraft, save, reset, dirty, saving };
+  return { data: draft, setData: setDraft, save, reset, dirty, saving };
 }
 
 // Convert Arabic-Indic digits to ASCII

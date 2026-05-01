@@ -748,13 +748,6 @@ export function MembersAdmin() {
       display_name: p.display_name ?? "", discord_username: p.discord_username ?? "",
       favorite_game: p.favorite_game ?? "", bio: p.bio ?? "", avatar_url: p.avatar_url ?? "",
       points: p.points ?? 0, xp: p.xp ?? 0, level: p.level ?? 1,
-      tournaments_won: p.tournaments_won ?? 0,
-      tournaments_played: p.tournaments_played ?? 0,
-      best_rank: p.best_rank ?? "",
-      team_name: p.team_name ?? "",
-      custom_title: p.custom_title ?? "",
-      dev_notes: p.dev_notes ?? "",
-      username: p.username ?? "",
     });
   }
   async function saveEdit() {
@@ -766,19 +759,8 @@ export function MembersAdmin() {
       points: Math.max(0, Number(editForm.points) || 0),
       xp: Math.max(0, Number(editForm.xp) || 0),
       level: Math.max(1, Number(editForm.level) || 1),
-      tournaments_won: Math.max(0, Number(editForm.tournaments_won) || 0),
-      tournaments_played: Math.max(0, Number(editForm.tournaments_played) || 0),
-      best_rank: editForm.best_rank === "" || editForm.best_rank == null ? null : Math.max(1, Number(editForm.best_rank)),
-      team_name: editForm.team_name || null,
-      custom_title: editForm.custom_title || null,
-      dev_notes: editForm.dev_notes || null,
-      username: editForm.username ? String(editForm.username).trim().toLowerCase().replace(/[^a-z0-9_-]/g, "") || null : null,
     }).eq("user_id", editingId);
     if (error) toast.error(error.message); else { toast.success("تم الحفظ"); setEditingId(null); load(); }
-  }
-  async function quickWinBump(userId: string, delta: number) {
-    const { error } = await supabase.rpc("admin_increment_wins", { _user_id: userId, _delta: delta });
-    if (error) toast.error(error.message); else { toast.success(delta > 0 ? "+1 فوز" : "-1 فوز"); load(); }
   }
   async function changeRole(userId: string, role: string) {
     await supabase.from("user_roles").delete().eq("user_id", userId);
@@ -801,45 +783,35 @@ export function MembersAdmin() {
             <TableRow>
               <TableHead>الصورة</TableHead>
               <TableHead>الاسم</TableHead>
-              <TableHead>Username</TableHead>
               <TableHead>Discord</TableHead>
-              <TableHead>اللعبة</TableHead>
+              <TableHead>اللعبة المفضلة</TableHead>
               <TableHead>المستوى</TableHead>
               <TableHead>XP</TableHead>
               <TableHead>النقاط</TableHead>
-              <TableHead>🏆 فاز</TableHead>
-              <TableHead>🎮 شارك</TableHead>
-              <TableHead>أفضل مركز</TableHead>
-              <TableHead>الفريق</TableHead>
-              <TableHead>اللقب</TableHead>
               <TableHead>الرتبة</TableHead>
-              <TableHead>ملاحظات المطور</TableHead>
+              <TableHead>النبذة</TableHead>
+              <TableHead>أنشئ في</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {list.length === 0 && <TableRow><TableCell colSpan={16} className="text-center py-8 text-muted-foreground">لا يوجد أعضاء</TableCell></TableRow>}
+            {list.length === 0 && <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">لا يوجد أعضاء</TableCell></TableRow>}
             {list.map((p) => editingId === p.user_id ? (
               <TableRow key={p.user_id} className="bg-muted/20">
                 <TableCell><Input value={editForm.avatar_url} onChange={(e) => setEditForm({ ...editForm, avatar_url: e.target.value })} className="w-32" placeholder="URL" /></TableCell>
                 <TableCell><Input value={editForm.display_name} onChange={(e) => setEditForm({ ...editForm, display_name: e.target.value })} /></TableCell>
-                <TableCell><Input value={editForm.username} onChange={(e) => setEditForm({ ...editForm, username: e.target.value })} placeholder="username" className="w-28" /></TableCell>
                 <TableCell><Input value={editForm.discord_username} onChange={(e) => setEditForm({ ...editForm, discord_username: e.target.value })} /></TableCell>
                 <TableCell><Input value={editForm.favorite_game} onChange={(e) => setEditForm({ ...editForm, favorite_game: e.target.value })} /></TableCell>
                 <TableCell><Input type="number" value={editForm.level} onChange={(e) => setEditForm({ ...editForm, level: +e.target.value })} className="w-20" /></TableCell>
                 <TableCell><Input type="number" value={editForm.xp} onChange={(e) => setEditForm({ ...editForm, xp: +e.target.value })} className="w-24" /></TableCell>
                 <TableCell><Input type="number" value={editForm.points} onChange={(e) => setEditForm({ ...editForm, points: +e.target.value })} className="w-24" /></TableCell>
-                <TableCell><Input type="number" value={editForm.tournaments_won} onChange={(e) => setEditForm({ ...editForm, tournaments_won: +e.target.value })} className="w-20" /></TableCell>
-                <TableCell><Input type="number" value={editForm.tournaments_played} onChange={(e) => setEditForm({ ...editForm, tournaments_played: +e.target.value })} className="w-20" /></TableCell>
-                <TableCell><Input type="number" value={editForm.best_rank} onChange={(e) => setEditForm({ ...editForm, best_rank: e.target.value })} className="w-20" placeholder="—" /></TableCell>
-                <TableCell><Input value={editForm.team_name} onChange={(e) => setEditForm({ ...editForm, team_name: e.target.value })} className="w-32" /></TableCell>
-                <TableCell><Input value={editForm.custom_title} onChange={(e) => setEditForm({ ...editForm, custom_title: e.target.value })} className="w-32" placeholder="أسطورة..." /></TableCell>
                 <TableCell>
                   <select value={roles[p.user_id] ?? "user"} onChange={(e) => changeRole(p.user_id, e.target.value)} className="bg-background border border-border rounded px-2 py-1 text-sm">
                     <option value="user">عضو</option><option value="moderator">مشرف</option><option value="admin">أدمن</option>
                   </select>
                 </TableCell>
-                <TableCell><Textarea value={editForm.dev_notes} onChange={(e) => setEditForm({ ...editForm, dev_notes: e.target.value })} rows={1} className="min-w-48" /></TableCell>
+                <TableCell><Textarea value={editForm.bio} onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })} rows={1} className="min-w-48" /></TableCell>
+                <TableCell className="text-xs">{new Date(p.created_at).toLocaleDateString("ar")}</TableCell>
                 <TableCell><div className="flex gap-1">
                   <Button size="icon" variant="ghost" onClick={saveEdit}><Save className="w-4 h-4 text-green-500" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => setEditingId(null)}><X className="w-4 h-4" /></Button>
@@ -848,30 +820,19 @@ export function MembersAdmin() {
             ) : (
               <TableRow key={p.user_id}>
                 <TableCell>{p.avatar_url ? <img src={p.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="text-muted-foreground text-xs">—</span>}</TableCell>
-                <TableCell className="font-bold">{p.display_name}{p.custom_title && <span className="block text-[10px] text-accent">{p.custom_title}</span>}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">{p.username ?? "—"}</TableCell>
+                <TableCell className="font-bold">{p.display_name}</TableCell>
                 <TableCell className="text-xs">{p.discord_username ?? "—"}</TableCell>
                 <TableCell className="text-xs">{p.favorite_game ?? "—"}</TableCell>
                 <TableCell>{p.level}</TableCell>
                 <TableCell>{p.xp ?? 0}</TableCell>
                 <TableCell>{p.points}</TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1">
-                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => quickWinBump(p.user_id, -1)}>−</Button>
-                    <span className="font-bold tabular-nums w-6 text-center">{p.tournaments_won ?? 0}</span>
-                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => quickWinBump(p.user_id, 1)}>+</Button>
-                  </div>
-                </TableCell>
-                <TableCell className="tabular-nums">{p.tournaments_played ?? 0}</TableCell>
-                <TableCell className="tabular-nums">{p.best_rank ?? "—"}</TableCell>
-                <TableCell className="text-xs">{p.team_name ?? "—"}</TableCell>
-                <TableCell className="text-xs">{p.custom_title ?? "—"}</TableCell>
-                <TableCell>
                   <select value={roles[p.user_id] ?? "user"} onChange={(e) => changeRole(p.user_id, e.target.value)} className="bg-background border border-border rounded px-2 py-1 text-sm">
                     <option value="user">عضو</option><option value="moderator">مشرف</option><option value="admin">أدمن</option>
                   </select>
                 </TableCell>
-                <TableCell className="text-xs max-w-xs truncate">{p.dev_notes ?? "—"}</TableCell>
+                <TableCell className="text-xs max-w-xs truncate">{p.bio ?? "—"}</TableCell>
+                <TableCell className="text-xs whitespace-nowrap">{new Date(p.created_at).toLocaleDateString("ar")}</TableCell>
                 <TableCell><Button size="icon" variant="ghost" onClick={() => startEdit(p)}><Pencil className="w-4 h-4" /></Button></TableCell>
               </TableRow>
             ))}
