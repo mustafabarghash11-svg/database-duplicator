@@ -35,7 +35,7 @@ function DevPanel() {
             const expected = (import.meta.env.VITE_DEVK_PIN as string | undefined)?.trim() || "87";
             if (cleaned && cleaned === expected) {
               setAuthed(true);
-              toast.success("مرحباً بك");
+              toast.success("مرحبا بك");
             } else {
               toast.error("كود خاطئ");
             }
@@ -181,7 +181,7 @@ function Panel({ pin }: { pin: string }) {
             >
               <RotateCcw className="w-4 h-4" />تراجع
             </Button>
-            <Button variant="outline" size="sm" onClick={() => { if (confirm("استرجاع الإعدادات الافتراضية؟ (لن يُحفظ تلقائياً، اضغط حفظ بعدها)")) { setData(defaultData); toast.success("تم — اضغط حفظ للنشر"); } }}>استرجاع افتراضي</Button>
+            <Button variant="outline" size="sm" onClick={() => { if (confirm("استرجاع الإعدادات الافتراضية؟ (لن يحفظ تلقائيا، اضغط حفظ بعدها)")) { setData(defaultData); toast.success("تم — اضغط حفظ للنشر"); } }}>استرجاع افتراضي</Button>
             <Button asChild variant="outline" size="sm"><a href="/">عرض الموقع</a></Button>
           </div>
         </div>
@@ -210,7 +210,7 @@ function Panel({ pin }: { pin: string }) {
               <Field label="اسم الموقع"><Input value={data.siteName} onChange={(e) => update({ siteName: e.target.value })} /></Field>
               <Field label="الوصف"><Textarea value={data.tagline} onChange={(e) => update({ tagline: e.target.value })} /></Field>
               <Field label="رابط الديسكورد"><Input value={data.discordLink} onChange={(e) => update({ discordLink: e.target.value })} /></Field>
-              <Field label="Discord Server ID (لعرض عدد المتصلين مباشرة — فعّل Widget من إعدادات السيرفر)">
+              <Field label="Discord Server ID (لعرض عدد المتصلين مباشرة — فعل Widget من إعدادات السيرفر)">
                 <Input value={data.discordServerId} onChange={(e) => update({ discordServerId: e.target.value })} placeholder="123456789012345678" />
               </Field>
               <div className="flex items-center justify-between rounded-lg border border-border p-3">
@@ -233,7 +233,7 @@ function Panel({ pin }: { pin: string }) {
                       <Input type="datetime-local" value={data.upcomingEvent.date.slice(0, 16)} onChange={(e) => update({ upcomingEvent: { ...data.upcomingEvent!, date: new Date(e.target.value).toISOString() } })} />
                     </Field>
                   </div>
-                ) : <p className="text-sm text-muted-foreground text-center py-2">لا يوجد إيفنت حالياً</p>}
+                ) : <p className="text-sm text-muted-foreground text-center py-2">لا يوجد إيفنت حاليا</p>}
               </Section>
             </div>
           </TabsContent>
@@ -292,4 +292,4 @@ function Panel({ pin }: { pin: string }) {
                     <Input placeholder="الاسم" value={s.name} onChange={(e) => updateStreamer(s.id, { name: e.target.value })} />
                     <Input placeholder="المنصة (Twitch, YouTube, Kick, TikTok...)" value={s.platform} onChange={(e) => updateStreamer(s.id, { platform: e.target.value })} />
                   </div>
-                  <Input placeho
+                  <Input placeholder=
