@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      match_participants: {
+        Row: {
+          created_at: string
+          id: string
+          is_mvp: boolean
+          match_id: string
+          side: string
+          team_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_mvp?: boolean
+          match_id: string
+          side: string
+          team_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_mvp?: boolean
+          match_id?: string
+          side?: string
+          team_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_participants_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_participants_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -177,6 +222,85 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      tournament_matches: {
+        Row: {
+          created_at: string
+          id: string
+          match_order: number | null
+          notes: string | null
+          round: string | null
+          scheduled_at: string | null
+          score_a: number | null
+          score_b: number | null
+          side_a_team_id: string | null
+          side_a_user_id: string | null
+          side_b_team_id: string | null
+          side_b_user_id: string | null
+          status: Database["public"]["Enums"]["match_status"]
+          tournament_id: string
+          updated_at: string
+          winner_side: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_order?: number | null
+          notes?: string | null
+          round?: string | null
+          scheduled_at?: string | null
+          score_a?: number | null
+          score_b?: number | null
+          side_a_team_id?: string | null
+          side_a_user_id?: string | null
+          side_b_team_id?: string | null
+          side_b_user_id?: string | null
+          status?: Database["public"]["Enums"]["match_status"]
+          tournament_id: string
+          updated_at?: string
+          winner_side?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_order?: number | null
+          notes?: string | null
+          round?: string | null
+          scheduled_at?: string | null
+          score_a?: number | null
+          score_b?: number | null
+          side_a_team_id?: string | null
+          side_a_user_id?: string | null
+          side_b_team_id?: string | null
+          side_b_user_id?: string | null
+          status?: Database["public"]["Enums"]["match_status"]
+          tournament_id?: string
+          updated_at?: string
+          winner_side?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_matches_side_a_team_id_fkey"
+            columns: ["side_a_team_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_side_b_team_id_fkey"
+            columns: ["side_b_team_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tournament_registrations: {
         Row: {
@@ -359,7 +483,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_tournament_stats: {
+        Row: {
+          matches_played: number | null
+          matches_won: number | null
+          mvp_count: number | null
+          tournaments_count: number | null
+          tournaments_won: number | null
+          user_id: string | null
+          win_rate: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_increment_wins: {
@@ -381,6 +516,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      match_status: "scheduled" | "live" | "completed" | "cancelled"
       registration_status: "pending" | "approved" | "rejected"
       shop_order_status: "pending" | "fulfilled" | "cancelled"
       tournament_status:
@@ -517,6 +653,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      match_status: ["scheduled", "live", "completed", "cancelled"],
       registration_status: ["pending", "approved", "rejected"],
       shop_order_status: ["pending", "fulfilled", "cancelled"],
       tournament_status: [
