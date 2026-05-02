@@ -56,7 +56,10 @@ export function useAuth() {
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
-    setIsAdmin(true);
+    setIsAdmin(
+      Array.isArray(roles) &&
+        roles.some((r: { role: string }) => r.role === "admin" || r.role === "moderator"),
+    );
   }
 
   async function refresh() {

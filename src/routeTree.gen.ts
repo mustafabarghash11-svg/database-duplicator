@@ -20,6 +20,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as UUserIdRouteImport } from './routes/u.$userId'
 import { Route as SSlugRouteImport } from './routes/s.$slug'
 
 const TournamentsRoute = TournamentsRouteImport.update({
@@ -77,6 +78,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UUserIdRoute = UUserIdRouteImport.update({
+  id: '/u/$userId',
+  path: '/u/$userId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SSlugRoute = SSlugRouteImport.update({
   id: '/s/$slug',
   path: '/s/$slug',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/streamers': typeof StreamersRoute
   '/tournaments': typeof TournamentsRoute
   '/s/$slug': typeof SSlugRoute
+  '/u/$userId': typeof UUserIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/streamers': typeof StreamersRoute
   '/tournaments': typeof TournamentsRoute
   '/s/$slug': typeof SSlugRoute
+  '/u/$userId': typeof UUserIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/streamers': typeof StreamersRoute
   '/tournaments': typeof TournamentsRoute
   '/s/$slug': typeof SSlugRoute
+  '/u/$userId': typeof UUserIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/streamers'
     | '/tournaments'
     | '/s/$slug'
+    | '/u/$userId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/streamers'
     | '/tournaments'
     | '/s/$slug'
+    | '/u/$userId'
   id:
     | '__root__'
     | '/'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/streamers'
     | '/tournaments'
     | '/s/$slug'
+    | '/u/$userId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +196,7 @@ export interface RootRouteChildren {
   StreamersRoute: typeof StreamersRoute
   TournamentsRoute: typeof TournamentsRoute
   SSlugRoute: typeof SSlugRoute
+  UUserIdRoute: typeof UUserIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -265,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/u/$userId': {
+      id: '/u/$userId'
+      path: '/u/$userId'
+      fullPath: '/u/$userId'
+      preLoaderRoute: typeof UUserIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/s/$slug': {
       id: '/s/$slug'
       path: '/s/$slug'
@@ -288,6 +308,7 @@ const rootRouteChildren: RootRouteChildren = {
   StreamersRoute: StreamersRoute,
   TournamentsRoute: TournamentsRoute,
   SSlugRoute: SSlugRoute,
+  UUserIdRoute: UUserIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
