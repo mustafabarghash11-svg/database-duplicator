@@ -17,44 +17,65 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          best_rank: number | null
           bio: string | null
           created_at: string
+          custom_title: string | null
+          dev_notes: string | null
           discord_username: string | null
           display_name: string
           favorite_game: string | null
           id: string
           level: number
           points: number
+          team_name: string | null
+          tournaments_played: number
+          tournaments_won: number
           updated_at: string
           user_id: string
+          username: string | null
           xp: number
         }
         Insert: {
           avatar_url?: string | null
+          best_rank?: number | null
           bio?: string | null
           created_at?: string
+          custom_title?: string | null
+          dev_notes?: string | null
           discord_username?: string | null
           display_name: string
           favorite_game?: string | null
           id?: string
           level?: number
           points?: number
+          team_name?: string | null
+          tournaments_played?: number
+          tournaments_won?: number
           updated_at?: string
           user_id: string
+          username?: string | null
           xp?: number
         }
         Update: {
           avatar_url?: string | null
+          best_rank?: number | null
           bio?: string | null
           created_at?: string
+          custom_title?: string | null
+          dev_notes?: string | null
           discord_username?: string | null
           display_name?: string
           favorite_game?: string | null
           id?: string
           level?: number
           points?: number
+          team_name?: string | null
+          tournaments_played?: number
+          tournaments_won?: number
           updated_at?: string
           user_id?: string
+          username?: string | null
           xp?: number
         }
         Relationships: []
@@ -341,6 +362,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_increment_wins: {
+        Args: { _delta?: number; _user_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
