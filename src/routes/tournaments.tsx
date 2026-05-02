@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Trophy, Users, Calendar, Gift } from "lucide-react";
+import { TournamentMatchesDialog } from "@/components/TournamentMatchesDialog";
 
 export const Route = createFileRoute("/tournaments")({
   head: () => ({
@@ -216,6 +217,7 @@ function TournamentCard({ t, count, isRegistered, userLoggedIn, onChange }: {
             </DialogContent>
           </Dialog>
         )}
+        <TournamentMatchesDialog tournamentId={t.id} tournamentTitle={t.title} />
       </div>
     </div>
   );

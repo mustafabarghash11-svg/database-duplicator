@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Plus, Trophy, ShoppingBag, Package, Users, Sparkles, Pencil, RefreshCw, Save, X, Check, ShieldQuestion, UsersRound } from "lucide-react";
+import { Trash2, Plus, Trophy, ShoppingBag, Package, Users, Sparkles, Pencil, RefreshCw, Save, X, Check, ShieldQuestion, UsersRound, Swords } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast, Toaster } from "sonner";
@@ -44,6 +44,7 @@ function AdminPage() {
             <TabsTrigger value="tournaments"><Trophy className="w-4 h-4 ml-1" /> البطولات</TabsTrigger>
             <TabsTrigger value="registrations"><Users className="w-4 h-4 ml-1" /> التسجيلات</TabsTrigger>
             <TabsTrigger value="teams"><UsersRound className="w-4 h-4 ml-1" /> الفرق</TabsTrigger>
+            <TabsTrigger value="matches"><Swords className="w-4 h-4 ml-1" /> المباريات</TabsTrigger>
             <TabsTrigger value="shop"><ShoppingBag className="w-4 h-4 ml-1" /> المتجر</TabsTrigger>
             <TabsTrigger value="orders"><Package className="w-4 h-4 ml-1" /> الطلبات</TabsTrigger>
           </TabsList>
@@ -52,6 +53,7 @@ function AdminPage() {
           <TabsContent value="tournaments"><TournamentsAdmin /></TabsContent>
           <TabsContent value="registrations"><RegistrationsAdmin /></TabsContent>
           <TabsContent value="teams"><TeamsAdmin /></TabsContent>
+          <TabsContent value="matches"><MatchesAdmin /></TabsContent>
           <TabsContent value="shop"><ShopAdmin /></TabsContent>
           <TabsContent value="orders"><OrdersAdmin /></TabsContent>
         </Tabs>
@@ -839,6 +841,409 @@ export function MembersAdmin() {
           </TableBody>
         </Table>
       </TableShell>
+    </div>
+  );
+}
+
+// ============= MATCHES =============
+type MatchRow = {
+  id: string;
+  tournament_id: string;
+  round: string | null;
+  match_order: number | null;
+  scheduled_at: string | null;
+  side_a_team_id: string | null;
+  side_b_team_id: string | null;
+  side_a_user_id: string | null;
+  side_b_user_id: string | null;
+  score_a: number | null;
+  score_b: number | null;
+  status: string;
+  winner_side: string | null;
+  notes: string | null;
+};
+
+export function MatchesAdmin() {
+  const [tournaments, setTournaments] = useState<any[]>([]);
+  const [tournamentId, setTournamentId] = useState<string>("");
+  const [matches, setMatches] = useState<MatchRow[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [regs, setRegs] = useState<any[]>([]); // approved registrations (users)
+  const [profiles, setProfiles] = useState<Record<string, { display_name: string }>>({});
+  const [busy, setBusy] = useState(false);
+
+  async function loadTournaments() {
+    const { data } = await supabase.from("tournaments").select("id, title, game").order("start_date", { ascending: false });
+    setTournaments(data ?? []);
+    if (!tournamentId && data && data.length) setTournamentId(data[0].id);
+  }
+
+  async function loadAll(tId: string) {
+    if (!tId) return;
+    const [{ data: m }, { data: t }, { data: r }] = await Promise.all([
+      (supabase as any).from("tournament_matches").select("*").eq("tournament_id", tId).order("match_order", { ascending: true }),
+      (supabase as any).from("tournament_teams").select("*").eq("tournament_id", tId),
+      (supabase as any).from("tournament_registrations").select("user_id, status").eq("tournament_id", tId).eq("status", "approved"),
+    ]);
+    setMatches((m as MatchRow[]) ?? []);
+    setTeams(t ?? []);
+    setRegs(r ?? []);
+    const userIds = Array.from(new Set([...(r ?? []).map((x: any) => x.user_id)]));
+    if (userIds.length) {
+      const { data: profs } = await supabase.from("profiles").select("user_id, display_name").in("user_id", userIds);
+      const map: Record<string, any> = {};
+      (profs ?? []).forEach((p: any) => (map[p.user_id] = p));
+      setProfiles(map);
+    } else {
+      setProfiles({});
+    }
+  }
+
+  useEffect(() => { loadTournaments(); }, []);
+  useEffect(() => { if (tournamentId) loadAll(tournamentId); }, [tournamentId]);
+
+  async function createMatch() {
+    if (!tournamentId) return;
+    setBusy(true);
+    const { error } = await (supabase as any).from("tournament_matches").insert({
+      tournament_id: tournamentId,
+      round: "Round 1",
+      match_order: matches.length + 1,
+      status: "scheduled",
+    });
+    setBusy(false);
+    if (error) toast.error(error.message);
+    else { toast.success("تم إنشاء مباراة"); loadAll(tournamentId); }
+  }
+
+  async function deleteMatch(id: string) {
+    if (!confirm("حذف المباراة؟")) return;
+    const { error } = await (supabase as any).from("tournament_matches").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success("تم الحذف"); loadAll(tournamentId); }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl bg-card border border-border p-4 flex flex-wrap gap-3 items-end">
+        <div className="flex-1 min-w-[240px]">
+          <Label>البطولة</Label>
+          <Select value={tournamentId} onValueChange={setTournamentId}>
+            <SelectTrigger><SelectValue placeholder="اختر بطولة" /></SelectTrigger>
+            <SelectContent>
+              {tournaments.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.title} — {t.game}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button onClick={createMatch} disabled={!tournamentId || busy} className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold">
+          <Plus className="w-4 h-4 ml-1" /> مباراة جديدة
+        </Button>
+      </div>
+
+      {!tournamentId ? (
+        <p className="text-muted-foreground text-center py-8">اختر بطولة لعرض مبارياتها.</p>
+      ) : matches.length === 0 ? (
+        <p className="text-muted-foreground text-center py-8">لا مباريات لهذه البطولة بعد.</p>
+      ) : (
+        <div className="space-y-3">
+          {matches.map((m) => (
+            <MatchEditor
+              key={m.id}
+              m={m}
+              teams={teams}
+              regs={regs}
+              profiles={profiles}
+              onDelete={() => deleteMatch(m.id)}
+              onChange={() => loadAll(tournamentId)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MatchEditor({
+  m, teams, regs, profiles, onDelete, onChange,
+}: {
+  m: MatchRow;
+  teams: any[];
+  regs: { user_id: string }[];
+  profiles: Record<string, { display_name: string }>;
+  onDelete: () => void;
+  onChange: () => void;
+}) {
+  const [round, setRound] = useState(m.round ?? "");
+  const [order, setOrder] = useState<number>(m.match_order ?? 0);
+  const [scheduledAt, setScheduledAt] = useState(m.scheduled_at ? m.scheduled_at.slice(0, 16) : "");
+  const [teamA, setTeamA] = useState<string>(m.side_a_team_id ?? "");
+  const [teamB, setTeamB] = useState<string>(m.side_b_team_id ?? "");
+  const [userA, setUserA] = useState<string>(m.side_a_user_id ?? "");
+  const [userB, setUserB] = useState<string>(m.side_b_user_id ?? "");
+  const [scoreA, setScoreA] = useState<string>(m.score_a?.toString() ?? "");
+  const [scoreB, setScoreB] = useState<string>(m.score_b?.toString() ?? "");
+  const [status, setStatus] = useState<string>(m.status);
+  const [winner, setWinner] = useState<string>(m.winner_side ?? "");
+  const [notes, setNotes] = useState<string>(m.notes ?? "");
+  const [participants, setParticipants] = useState<{ user_id: string; side: "a" | "b"; team_id: string | null; is_mvp: boolean }[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  // load participants of this match
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("match_participants")
+        .select("user_id, side, team_id, is_mvp")
+        .eq("match_id", m.id);
+      setParticipants((data as any[]) ?? []);
+    })();
+  }, [m.id]);
+
+  // Auto-detect mode: if any team is selected → team mode
+  const teamMode = !!(teamA || teamB || teams.length > 0);
+
+  async function save() {
+    setSaving(true);
+    const payload: any = {
+      round: round || null,
+      match_order: order,
+      scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+      side_a_team_id: teamA || null,
+      side_b_team_id: teamB || null,
+      side_a_user_id: userA || null,
+      side_b_user_id: userB || null,
+      score_a: scoreA === "" ? null : Number(scoreA),
+      score_b: scoreB === "" ? null : Number(scoreB),
+      status,
+      winner_side: winner || null,
+      notes: notes || null,
+    };
+    const { error } = await (supabase as any).from("tournament_matches").update(payload).eq("id", m.id);
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else { toast.success("تم الحفظ"); onChange(); }
+  }
+
+  async function addParticipant(userId: string, side: "a" | "b") {
+    if (!userId) return;
+    const teamId = side === "a" ? teamA : teamB;
+    const { error } = await (supabase as any).from("match_participants").insert({
+      match_id: m.id,
+      user_id: userId,
+      side,
+      team_id: teamId || null,
+    });
+    if (error) toast.error(error.message);
+    else {
+      const { data } = await (supabase as any).from("match_participants").select("user_id, side, team_id, is_mvp").eq("match_id", m.id);
+      setParticipants(data ?? []);
+    }
+  }
+
+  async function removeParticipant(userId: string) {
+    const { error } = await (supabase as any).from("match_participants").delete().eq("match_id", m.id).eq("user_id", userId);
+    if (error) toast.error(error.message);
+    else setParticipants((p) => p.filter((x) => x.user_id !== userId));
+  }
+
+  async function toggleMvp(userId: string, current: boolean) {
+    // only one MVP per match: clear others first
+    if (!current) {
+      await (supabase as any).from("match_participants").update({ is_mvp: false }).eq("match_id", m.id);
+    }
+    const { error } = await (supabase as any)
+      .from("match_participants")
+      .update({ is_mvp: !current })
+      .eq("match_id", m.id)
+      .eq("user_id", userId);
+    if (error) toast.error(error.message);
+    else {
+      const { data } = await (supabase as any).from("match_participants").select("user_id, side, team_id, is_mvp").eq("match_id", m.id);
+      setParticipants(data ?? []);
+    }
+  }
+
+  const partsA = participants.filter((p) => p.side === "a");
+  const partsB = participants.filter((p) => p.side === "b");
+  const availableUsers = regs.filter(
+    (r) => !participants.some((p) => p.user_id === r.user_id),
+  );
+
+  return (
+    <div className="rounded-2xl bg-card border border-border p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <h4 className="font-black">مباراة #{m.match_order ?? "?"}</h4>
+        <Button variant="ghost" size="sm" onClick={onDelete}><Trash2 className="w-4 h-4 text-red-400" /></Button>
+      </div>
+
+      <div className="grid sm:grid-cols-3 gap-3">
+        <div>
+          <Label>الجولة</Label>
+          <Input value={round} onChange={(e) => setRound(e.target.value)} placeholder="مثلاً: نصف نهائي" />
+        </div>
+        <div>
+          <Label>ترتيب</Label>
+          <Input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value))} />
+        </div>
+        <div>
+          <Label>الموعد</Label>
+          <Input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Side A */}
+        <div className="rounded-xl border border-border/50 p-3 bg-background/30">
+          <div className="font-bold mb-2">🟦 الطرف A</div>
+          {teamMode && teams.length > 0 && (
+            <div className="mb-2">
+              <Label>الفريق</Label>
+              <Select value={teamA || "__none__"} onValueChange={(v) => setTeamA(v === "__none__" ? "" : v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— بدون فريق —</SelectItem>
+                  {teams.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <PlayersList
+            list={partsA}
+            profiles={profiles}
+            onRemove={removeParticipant}
+            onToggleMvp={toggleMvp}
+          />
+          <AddPlayer available={availableUsers} profiles={profiles} onAdd={(u) => addParticipant(u, "a")} />
+          <div className="mt-2">
+            <Label>النتيجة</Label>
+            <Input type="number" value={scoreA} onChange={(e) => setScoreA(e.target.value)} placeholder="0" />
+          </div>
+        </div>
+
+        {/* Side B */}
+        <div className="rounded-xl border border-border/50 p-3 bg-background/30">
+          <div className="font-bold mb-2">🟥 الطرف B</div>
+          {teamMode && teams.length > 0 && (
+            <div className="mb-2">
+              <Label>الفريق</Label>
+              <Select value={teamB || "__none__"} onValueChange={(v) => setTeamB(v === "__none__" ? "" : v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— بدون فريق —</SelectItem>
+                  {teams.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <PlayersList
+            list={partsB}
+            profiles={profiles}
+            onRemove={removeParticipant}
+            onToggleMvp={toggleMvp}
+          />
+          <AddPlayer available={availableUsers} profiles={profiles} onAdd={(u) => addParticipant(u, "b")} />
+          <div className="mt-2">
+            <Label>النتيجة</Label>
+            <Input type="number" value={scoreB} onChange={(e) => setScoreB(e.target.value)} placeholder="0" />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-3 gap-3">
+        <div>
+          <Label>الحالة</Label>
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="scheduled">قادمة</SelectItem>
+              <SelectItem value="live">مباشر</SelectItem>
+              <SelectItem value="completed">منتهية</SelectItem>
+              <SelectItem value="cancelled">ملغية</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>الفائز</Label>
+          <Select value={winner || "__none__"} onValueChange={(v) => setWinner(v === "__none__" ? "" : v)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">— لم يُحدَّد —</SelectItem>
+              <SelectItem value="a">الطرف A</SelectItem>
+              <SelectItem value="b">الطرف B</SelectItem>
+              <SelectItem value="draw">تعادل</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="sm:col-span-1">
+          <Label>ملاحظات</Label>
+          <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+        </div>
+      </div>
+
+      <Button onClick={save} disabled={saving} className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold">
+        <Save className="w-4 h-4 ml-1" /> {saving ? "..." : "حفظ المباراة"}
+      </Button>
+    </div>
+  );
+}
+
+function PlayersList({
+  list, profiles, onRemove, onToggleMvp,
+}: {
+  list: { user_id: string; is_mvp: boolean }[];
+  profiles: Record<string, { display_name: string }>;
+  onRemove: (uid: string) => void;
+  onToggleMvp: (uid: string, current: boolean) => void;
+}) {
+  if (list.length === 0) return <p className="text-xs text-muted-foreground">لا لاعبين بعد</p>;
+  return (
+    <ul className="space-y-1 mb-2">
+      {list.map((p) => (
+        <li key={p.user_id} className="flex items-center justify-between text-sm bg-background/40 rounded-md px-2 py-1">
+          <span className="truncate">
+            {p.is_mvp && "⭐ "}
+            {profiles[p.user_id]?.display_name ?? p.user_id.slice(0, 8)}
+          </span>
+          <span className="flex gap-1">
+            <button
+              onClick={() => onToggleMvp(p.user_id, p.is_mvp)}
+              title="MVP"
+              className={`text-xs px-2 py-0.5 rounded ${p.is_mvp ? "bg-yellow-400 text-black" : "bg-muted hover:bg-muted/70"}`}
+            >MVP</button>
+            <button onClick={() => onRemove(p.user_id)} className="text-red-400 text-xs px-1">×</button>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AddPlayer({
+  available, profiles, onAdd,
+}: {
+  available: { user_id: string }[];
+  profiles: Record<string, { display_name: string }>;
+  onAdd: (uid: string) => void;
+}) {
+  const [val, setVal] = useState("");
+  if (available.length === 0) return null;
+  return (
+    <div className="flex gap-1">
+      <Select value={val} onValueChange={setVal}>
+        <SelectTrigger className="text-xs h-8"><SelectValue placeholder="إضافة لاعب..." /></SelectTrigger>
+        <SelectContent>
+          {available.map((u) => (
+            <SelectItem key={u.user_id} value={u.user_id}>
+              {profiles[u.user_id]?.display_name ?? u.user_id.slice(0, 8)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button size="sm" variant="outline" onClick={() => { if (val) { onAdd(val); setVal(""); } }}>
+        <Plus className="w-3 h-3" />
+      </Button>
     </div>
   );
 }

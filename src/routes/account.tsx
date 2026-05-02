@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { LogOut, Trophy, Star, Coins } from "lucide-react";
+import { TournamentStats, RecentMatches } from "@/components/profile/TournamentStats";
 
 export const Route = createFileRoute("/account")({
   head: () => ({
@@ -142,6 +143,12 @@ function AccountPage() {
               <div className="h-full bg-gradient-to-l from-accent to-primary transition-all" style={{ width: `${progress}%` }} />
             </div>
           </div>
+        </div>
+
+        {/* Tournament stats + recent matches */}
+        <div className="space-y-6 mb-8">
+          <TournamentStats userId={user!.id} />
+          <RecentMatches userId={user!.id} limit={5} />
         </div>
 
         {/* Edit profile */}
