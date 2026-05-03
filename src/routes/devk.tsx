@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useSiteDataDraft, defaultData, normalizeDigits, applySavedData, type Game, type ServerStat, type ServerPerk, type CustomSection, type Block, type CardItem, type SocialItem, type Streamer, type LeaderboardEntry, type HallOfFameEntry } from "@/lib/khayal-store";
 import { saveSiteData } from "@/server/site-data.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
