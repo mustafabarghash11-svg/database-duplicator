@@ -64,7 +64,8 @@ function DevPanel() {
 }
 
 function Panel({ pin }: { pin: string }) {
-  const { data, setData, reset, dirty, saving } = useSiteDataDraft();
+  const { data, setData, save, reset, dirty, saving } = useSiteDataDraft();
+
   const [serverSaving, setServerSaving] = useState(false);
   const isSaving = saving || serverSaving;
   const update = (patch: Partial<typeof data>) => setData({ ...data, ...patch });
