@@ -1,1 +1,5 @@
 project_id = "harfzaiopfuoxmdkkznf"
+project_id = "qqzkqdjumrhqtrthdqkb"
+
+[functions.discord-callback]
+verify_jwt = false
