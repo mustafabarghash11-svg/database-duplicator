@@ -22,6 +22,8 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UUserIdRouteImport } from './routes/u.$userId'
 import { Route as SSlugRouteImport } from './routes/s.$slug'
+import { Route as ApiPublicDiscordXpRouteImport } from './routes/api/public/discord.xp'
+import { Route as ApiPublicDiscordPointsRouteImport } from './routes/api/public/discord.points'
 
 const TournamentsRoute = TournamentsRouteImport.update({
   id: '/tournaments',
@@ -88,6 +90,16 @@ const SSlugRoute = SSlugRouteImport.update({
   path: '/s/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDiscordXpRoute = ApiPublicDiscordXpRouteImport.update({
+  id: '/api/public/discord/xp',
+  path: '/api/public/discord/xp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicDiscordPointsRoute = ApiPublicDiscordPointsRouteImport.update({
+  id: '/api/public/discord/points',
+  path: '/api/public/discord/points',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -103,6 +115,8 @@ export interface FileRoutesByFullPath {
   '/tournaments': typeof TournamentsRoute
   '/s/$slug': typeof SSlugRoute
   '/u/$userId': typeof UUserIdRoute
+  '/api/public/discord/points': typeof ApiPublicDiscordPointsRoute
+  '/api/public/discord/xp': typeof ApiPublicDiscordXpRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +132,8 @@ export interface FileRoutesByTo {
   '/tournaments': typeof TournamentsRoute
   '/s/$slug': typeof SSlugRoute
   '/u/$userId': typeof UUserIdRoute
+  '/api/public/discord/points': typeof ApiPublicDiscordPointsRoute
+  '/api/public/discord/xp': typeof ApiPublicDiscordXpRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +150,8 @@ export interface FileRoutesById {
   '/tournaments': typeof TournamentsRoute
   '/s/$slug': typeof SSlugRoute
   '/u/$userId': typeof UUserIdRoute
+  '/api/public/discord/points': typeof ApiPublicDiscordPointsRoute
+  '/api/public/discord/xp': typeof ApiPublicDiscordXpRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +169,8 @@ export interface FileRouteTypes {
     | '/tournaments'
     | '/s/$slug'
     | '/u/$userId'
+    | '/api/public/discord/points'
+    | '/api/public/discord/xp'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +186,8 @@ export interface FileRouteTypes {
     | '/tournaments'
     | '/s/$slug'
     | '/u/$userId'
+    | '/api/public/discord/points'
+    | '/api/public/discord/xp'
   id:
     | '__root__'
     | '/'
@@ -181,6 +203,8 @@ export interface FileRouteTypes {
     | '/tournaments'
     | '/s/$slug'
     | '/u/$userId'
+    | '/api/public/discord/points'
+    | '/api/public/discord/xp'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -197,6 +221,8 @@ export interface RootRouteChildren {
   TournamentsRoute: typeof TournamentsRoute
   SSlugRoute: typeof SSlugRoute
   UUserIdRoute: typeof UUserIdRoute
+  ApiPublicDiscordPointsRoute: typeof ApiPublicDiscordPointsRoute
+  ApiPublicDiscordXpRoute: typeof ApiPublicDiscordXpRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -292,6 +318,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/discord/xp': {
+      id: '/api/public/discord/xp'
+      path: '/api/public/discord/xp'
+      fullPath: '/api/public/discord/xp'
+      preLoaderRoute: typeof ApiPublicDiscordXpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/discord/points': {
+      id: '/api/public/discord/points'
+      path: '/api/public/discord/points'
+      fullPath: '/api/public/discord/points'
+      preLoaderRoute: typeof ApiPublicDiscordPointsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -309,6 +349,8 @@ const rootRouteChildren: RootRouteChildren = {
   TournamentsRoute: TournamentsRoute,
   SSlugRoute: SSlugRoute,
   UUserIdRoute: UUserIdRoute,
+  ApiPublicDiscordPointsRoute: ApiPublicDiscordPointsRoute,
+  ApiPublicDiscordXpRoute: ApiPublicDiscordXpRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
