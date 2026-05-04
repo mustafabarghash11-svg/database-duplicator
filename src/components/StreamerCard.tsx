@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getYouTubeStatus, type YouTubeStatus } from "@/server/youtube.functions";
+import { getYouTubeStatus, type YouTubeStatus } from "@/lib/youtube.functions";
 import { safeHref, type Streamer } from "@/lib/khayal-store";
 
 type Activity = "live" | "short" | "video" | "none";
