@@ -76,10 +76,10 @@ function DevPanel() {
     );
   }
 
-  return <Panel pin={normalizeDigits(code).trim()} />;
+  return <Panel />;
 }
 
-function Panel({ pin }: { pin: string }) {
+function Panel() {
   const { data, setData, save, reset, dirty, saving } = useSiteDataDraft();
 
   const [serverSaving, setServerSaving] = useState(false);
