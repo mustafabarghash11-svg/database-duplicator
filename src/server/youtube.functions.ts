@@ -1,14 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { YouTubeStatus } from "@/lib/youtube-types";
 
-export type YouTubeStatus = {
-  isLive: boolean;
-  liveVideoId: string | null;
-  latestVideoId: string | null;
-  latestVideoTitle: string | null;
-  latestVideoPublishedAt: string | null;
-  latestVideoIsShort: boolean;
-};
+export type { YouTubeStatus };
 
 const inputSchema = z.object({
   channelId: z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/),
