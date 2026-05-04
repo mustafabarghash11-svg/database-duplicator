@@ -35,7 +35,7 @@ export const getSiteData = createServerFn({ method: 'GET' }).handler(
 type SavePayload = { pin: string; data: SiteData }
 
 export const saveSiteData = createServerFn({ method: 'POST' })
-  .validator((payload: SavePayload) => {
+  .inputValidator((payload: SavePayload) => {
     if (!payload || typeof payload !== 'object') {
       throw new Error('Invalid payload')
     }

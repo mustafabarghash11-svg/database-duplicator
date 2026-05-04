@@ -1,6 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { saveSiteData } from "@/server/site-data.functions";
+import {
+  useSiteDataDraft,
+  applySavedData,
+  defaultData,
+  normalizeDigits,
+  saveData,
+  type Game,
+  type ServerStat,
+  type ServerPerk,
+  type Streamer,
+  type LeaderboardEntry,
+  type HallOfFameEntry,
+  type CustomSection,
+  type Block,
+  type CardItem,
+  type SocialItem,
+} from "@/lib/khayal-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,10 +76,10 @@ function DevPanel() {
     );
   }
 
-  return <Panel pin={normalizeDigits(code).trim()} />;
+  return <Panel />;
 }
 
-function Panel({ pin }: { pin: string }) {
+function Panel() {
   const { data, setData, save, reset, dirty, saving } = useSiteDataDraft();
 
   const [serverSaving, setServerSaving] = useState(false);
@@ -157,8 +173,8 @@ function Panel({ pin }: { pin: string }) {
               onClick={async () => {
                 setServerSaving(true);
                 try {
-                  const saved = await saveSiteData({ data: { pin, data } });
-                  applySavedData(saved);
+                  await saveData(data);
+                  applySavedData(data);
                   toast.success("تم الحفظ ونشره للجميع");
                 } catch (e: unknown) {
                   const msg = e instanceof Error ? e.message : "فشل الحفظ";
