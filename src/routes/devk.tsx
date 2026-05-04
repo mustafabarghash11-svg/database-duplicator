@@ -5,6 +5,7 @@ import {
   applySavedData,
   defaultData,
   normalizeDigits,
+  saveData,
   type Game,
   type ServerStat,
   type ServerPerk,
@@ -172,8 +173,8 @@ function Panel({ pin }: { pin: string }) {
               onClick={async () => {
                 setServerSaving(true);
                 try {
-                  const saved = await saveSiteData({ data: { pin, data } });
-                  applySavedData(saved);
+                  await saveData(data);
+                  applySavedData(data);
                   toast.success("تم الحفظ ونشره للجميع");
                 } catch (e: unknown) {
                   const msg = e instanceof Error ? e.message : "فشل الحفظ";
